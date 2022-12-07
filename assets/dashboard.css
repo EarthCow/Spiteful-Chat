@@ -1,0 +1,506 @@
+::-webkit-scrollbar {
+  background-color: #d3d3d3;
+  width: 8px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background-color: #d3d3d3;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background-color: #b0b0b0;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background-color: #808080;
+}
+
+/* Ensures Padding, Margin, & Border do not cause elements to outsize their parents */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+a {
+  color: mediumaquamarine;
+  text-decoration: underline;
+}
+
+/* Loader */
+
+.loader {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 2.5px solid #5a5a5a;
+  margin: 10px auto;
+  border-radius: 50%;
+  border-right: 2.5px solid #f2f2f2;
+  animation: spin .75s linear infinite;
+  -webkit-animation: spin .75s linear infinite;
+}
+
+.loader + label {
+  text-align: center;
+  color: #808080;
+  margin-bottom: 5px;
+}
+
+@-moz-keyframes spin {
+  from { -moz-transform: rotate(0deg); }
+  to { -moz-transform: rotate(359deg); }
+}
+@-webkit-keyframes spin {
+  from { -webkit-transform: rotate(0deg); }
+  to { -webkit-transform: rotate(359deg); }
+}
+@keyframes spin {
+  from {transform:rotate(0deg);}
+  to {transform:rotate(359deg);}
+}
+
+/* Some useful classes */
+
+.mute {
+  color: #808080!important;
+}
+
+.italic {
+  font-style: italic!important;
+}
+
+/* .container is the element centering .main */
+.container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.main {
+
+  max-width: 95%;
+  height: 95%;
+  border-radius: 12px;
+  box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+  display: flex;
+  flex-flow: row nowrap;
+  font-size: 11pt;
+  transform: scale(0);
+  transition: transform .5s;
+}
+
+/* Profile Block */
+
+.profiles-block {
+  width: calc(250px + 50vw); /* 250px */
+  display: flex;
+  flex-direction: column;
+
+  transition: width .5s;
+}
+
+.newMsgBtnWrapper {
+  padding: 10px;
+}
+
+.newMsgBtn {
+  background-color: #2196f3;
+  padding: 4px 0;
+  width: 100%;
+  border: none;
+  color: white;
+  border-radius: 0.25rem;
+  box-sizing: border-box;
+  transition: background-color .25s;
+}
+
+.newMsgBtn:hover {
+  background-color: #1a7dcd;
+}
+
+.profiles-block ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.profiles-block ul button {
+  background-color: #2196f3;
+
+  margin: 0 0 5px 0;
+  padding: 4px 0;
+  width: 100%;
+  border: none;
+  color: white;
+  border-radius: 0.25rem;
+}
+
+.profiles-block li {
+  display: flow-root;
+}
+
+.profiles-block li div.wrapper {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  gap: 5px;
+
+  margin: 2.5px 10px
+}
+
+.active-dm {
+  background-color: rgba(0, 0, 0, 0.10);
+}
+
+button:hover,
+.profiles-block li:hover {
+  background-color: rgba(0, 0, 0, 0.10);
+  cursor: default;
+}
+
+.profiles-block li div.wrapper span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profiles-block li div.wrapper img {
+  border-radius: 50%;
+  width: 2.6rem;
+  height: 2.6rem;
+}
+
+/* My profile section */
+
+.profiles-list-wrapper {
+  flex-grow: 2;
+}
+
+.my-profile-section {
+  display: flex;
+  align-items: center;
+  padding: 5px;
+  flex-flow: row nowrap;
+  gap:5px;
+  height: 65px;
+  justify-content: space-between;
+}
+
+.my-profile-section img {
+  border-radius: 50%;
+  width: 2.6rem;
+}
+
+.my-profile-section span:first-child {
+  font-size: 1.15rem;
+}
+
+.my-profile-section span:last-child {
+  font-size: .8rem;
+  color: #808080;
+}
+
+.my-profile-section button {
+  border: none;
+  background-color: transparent;
+  font-size: 1.25rem;
+  padding: 5px 10px;
+  height: 100%;
+  transition: background-color .25s;
+  border-radius: 0.25rem;
+}
+
+.my-profile-block {
+  display: flex;
+  align-items: center;
+  flex-flow: row nowrap;
+  gap: 5px;
+  padding: 5px 10px;
+  transition: background-color .25s;
+  border-radius: 0.25rem;
+  cursor: default;
+}
+
+.my-profile-block:hover,
+.my-profile-section button:hover {
+  background-color: rgba(0, 0, 0, .10);
+}
+
+
+/* Messages Block */
+
+.messages-block {
+  display: flex;
+  flex-direction: column;
+
+  flex-grow: 2;
+  border-left: 1px solid #d3d3d3;
+  width: 0; /* 50vw */
+  /* min-width: 325px; */
+  opacity: 0;
+
+  transition: width .5s, opacity .4s;
+}
+
+/* Recipient Top Block */
+
+.recipientBlock {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 10px;
+
+  box-shadow: 0px 5px 10px rgb(0 0 0 / 35%);
+  z-index: 2;
+}
+
+.backBtn {
+  display: none;
+  background-color: transparent;
+  border:none;
+  padding: 10px 8px;
+}
+
+.recipientBlock img {
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 50%;
+}
+
+.recipientBlock span:first-child {
+  font-size: 1.25rem;
+}
+
+.recipientBlock span:last-child {
+  color: #808080;
+  font-size: .8rem;
+}
+
+/* Messages Container & Wrapper */
+
+.messagesContainer {
+  padding: 10px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column-reverse;
+  flex-grow: 2;
+}
+
+.messages {
+  display: flex;
+  justify-content: start;
+  flex-direction: column;
+  gap: 5px;
+}
+
+/* Message Styling */
+
+.messageWrapper {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.messageWrapper>img {
+  border-radius: 50%;
+  width: 1.8rem;
+  height: 1.8rem;
+}
+
+.messageWrapper span {
+  background-color: #d3d3d3;
+  padding: 0.8rem 0.6rem;
+  border-radius: 0.25rem;
+  word-break: break-word;
+}
+
+.messageWrapper span img,
+.messageWrapper span video {
+  width: 100%;
+}
+
+.myMessage {
+  flex-direction: row-reverse;
+}
+
+.fileMsg, .fileMsg i {
+  font-size: 1.05rem;
+}
+.fileMsg span {
+  padding:0;
+}
+.fileMsg button {
+  margin:0;
+  padding:0;
+  background-color: transparent;
+  border:none;
+  color: lightskyblue;
+}
+
+/* Message Toolbar */
+
+.messageBar {
+  display: flex;
+
+  box-shadow: 0px -5px 10px rgb(0 0 0 / 35%);
+  z-index: 2;
+}
+
+.messageBar button {
+  border: none;
+  background-color: transparent;
+  border-top: 1px solid #d3d3d3;
+}
+
+.messageBar button:first-child {
+  border-right: 1px solid #d3d3d3;
+}
+
+.messageBar button:last-child {
+  border-left: 1px solid #d3d3d3;
+}
+
+.messageBar textarea {
+  min-height: 65px;
+  max-height: 25vh;
+  width: 100%;
+  resize: none;
+  overflow-y: hidden;
+
+  border: none;
+  border-top: 1px solid #d3d3d3;
+  background-color: transparent;
+}
+
+.no-profile-selection {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* STYLING FOR UPLOAD ELEMENTS */
+
+.uploadField {
+  height: 75px;
+  border: 1px dotted #ced4da;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+}
+
+.uploadingContainer {
+  display: flex;
+  flex-direction: column;
+}
+
+.uploadingContainer .inlineRow {
+  display: flex;
+  justify-content: space-between;
+}
+
+.uploadingContainer .innerBar {
+  background-color: #7066e0;
+  border-radius: .25rem;
+}
+
+/* MEDIA TAGS */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text: #f2f2f2;
+    --outside: #303030 ;
+    --inside: #383838 ;
+    --inside-detail: #505050 ;
+  }
+
+  ::-webkit-scrollbar {
+    background-color: var(--inside);
+  }
+  
+  /* Track */
+  ::-webkit-scrollbar-track {
+    background-color: var(--inside);
+  }
+  
+  /* Handle */
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--inside-detail);
+  }
+  
+  /* Handle on hover */
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: #585858;
+  }
+
+  body {
+    background-color: var(--outside);
+    color: var(--text);
+  }
+
+  .main {
+    background-color: var(--inside);
+  }
+
+  .profiles-block {
+    background-color: var(--inside);
+  }
+  
+  .newMsgBtn {
+    background-color: #7066e0
+  }
+
+  .newMsgBtn:hover {
+    background-color: #6057c6
+  }
+
+  .messageWrapper span {
+    background-color: var(--inside-detail);
+  }
+  
+  button, .msg {
+    color: var(--text);
+  }
+  
+  .messages-block, .messageBar button, .msg {
+    border-color: var(--inside-detail)!important;
+  }
+
+}
+
+@media only screen and (max-width: 650px) {
+  .main {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 0;
+  }
+}
+
+@media only screen and (max-width: 550px) {
+  .profiles-block {
+    width: 100%;
+    height: 100%;
+    z-index: 5;
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+  .backBtn {
+    display: block;
+  }
+}
