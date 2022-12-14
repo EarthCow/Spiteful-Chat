@@ -10,7 +10,8 @@ if (!isset($_POST['process']) || !isset($_POST['data'])) {
   if (!isset($_SESSION['id']) || !isset($_SESSION['token'])) {
     die("SESS");
   } else {
-    require_once("/WAMP/apache2/gtdocs/spiteful-chat/database.php");
+    $private = "/WAMP/apache2/gtdocs/spiteful-chat";
+    require_once("$private/database.php");
     $connection = $GLOBALS['connection'];
 
     $id = $_SESSION['id'];
@@ -85,7 +86,7 @@ if (!isset($_POST['process']) || !isset($_POST['data'])) {
 
               $theChat = json_decode($row["chats"], true)[$recipientRow["id"]];
 
-              $chatFileSize = filesize('C:/WAMP/apache2/gtdocs/spiteful-chat/chats/'.$theChat["filename"]);
+              $chatFileSize = filesize("$private/chats/".$theChat["filename"]);
 
               $messagesJson = [];
 
@@ -94,7 +95,7 @@ if (!isset($_POST['process']) || !isset($_POST['data'])) {
                 $response["statusText"] = "Failed to retrieve information";
                 die(json_encode($response));
               } elseif ($chatFileSize) {
-                $theChatFile = fopen('C:/WAMP/apache2/gtdocs/spiteful-chat/chats/'.$theChat["filename"], "r");
+                $theChatFile = fopen("$private/chats/".$theChat["filename"], "r");
                 $messages = fread($theChatFile, $chatFileSize);
   
                 // this is an array of messages "4:231323:content:..."
@@ -179,7 +180,7 @@ if (!isset($_POST['process']) || !isset($_POST['data'])) {
               $chats[$recipientRow["id"]]["lastMessage"] = $message;
               $message = ";$id:".time().":".base64_encode($message);
 
-              $myfile = file_put_contents('C:/WAMP/apache2/gtdocs/spiteful-chat/chats/'.$theChat["filename"], $message.PHP_EOL , FILE_APPEND | LOCK_EX);
+              $myfile = file_put_contents("$private/chats/".$theChat["filename"], $message.PHP_EOL , FILE_APPEND | LOCK_EX);
 
               $lm = date("m/d/Y h:i:s", $timestamp = time());
               $recipientChats[$row["id"]]["lastModified"] = $lm;
@@ -237,7 +238,7 @@ if (!isset($_POST['process']) || !isset($_POST['data'])) {
                 die(json_encode($response));
               }
               $mediaFilename = uniqid(rand(), true);
-              if(!rename($_FILES['file']['tmp_name'], "C:/WAMP/apache2/gtdocs/spiteful-chat/chats/media/$mediaFilename")){
+              if(!rename($_FILES['file']['tmp_name'], "$private/chats/media/$mediaFilename")){
                 $response["statusText"] = "Failed to retrieve file" . $_FILES['file']['type'];
                 die(json_encode($response));
               }
@@ -256,7 +257,7 @@ if (!isset($_POST['process']) || !isset($_POST['data'])) {
               $chats[$recipientRow["id"]]["lastMessage"] = $_FILES['file']['name'];
               $message = ";$id:".time().":$mediaFilename:" . (($_FILES['file']['type'] == "video/quicktime") ? "video/mp4" : $_FILES['file']['type']) . ":" . base64_encode($_FILES['file']['name']);
 
-              $myfile = file_put_contents('C:/WAMP/apache2/gtdocs/spiteful-chat/chats/'.$theChat["filename"], $message.PHP_EOL , FILE_APPEND | LOCK_EX);
+              $myfile = file_put_contents("$private/chats/".$theChat["filename"], $message.PHP_EOL , FILE_APPEND | LOCK_EX);
 
               $lm = date("m/d/Y h:i:s", $timestamp = time());
               $recipientChats[$row["id"]]["lastModified"] = $lm;
@@ -366,7 +367,7 @@ if (!isset($_POST['process']) || !isset($_POST['data'])) {
                       "lastModifiedTime" => $timestamp
                   ];
 
-                  if (!$chatFile = fopen("C:/WAMP/apache2/gtdocs/spiteful-chat/chats/$chatFilename", "w")) {
+                  if (!$chatFile = fopen("$private/chats/$chatFilename", "w")) {
                     $response["statusText"] = "Failed to dedicate new chat file";
                     die(json_encode($response));
                   }
@@ -430,14 +431,14 @@ if (!isset($_POST['process']) || !isset($_POST['data'])) {
                 $connection -> query("UPDATE `profiles` SET chats = NULL");
 
                 $deletedFileList = [];
-                $files = glob('C:/WAMP/apache2/gtdocs/spiteful-chat/chats/*');
+                $files = glob("$private/chats/*");
                 array_push($deletedFileList, $files);
                 foreach($files as $file){
                   if(is_file($file)) {
                     unlink($file);
                   }
                 }
-                $files = glob('C:/WAMP/apache2/gtdocs/spiteful-chat/chats/media/*');
+                $files = glob("$private/chats/media/*");
                 array_push($deletedFileList, $files);
                 foreach($files as $file){
                   if(is_file($file)) {

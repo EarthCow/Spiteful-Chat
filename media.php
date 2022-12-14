@@ -18,7 +18,8 @@ if (!isset($_SESSION['id']) || !isset($_SESSION['token'])) {
   die();
 }
 
-require_once("/WAMP/apache2/gtdocs/spiteful-chat/database.php");
+$private = "/WAMP/apache2/gtdocs/spiteful-chat";
+require_once("$private/database.php");
 
 $id = $_SESSION['id'];
 $token = $_SESSION['token'];
@@ -61,20 +62,20 @@ $mediaMimeType = $_GET["type"];
 $c = $_GET["c"];
 
 // to verify I have access we can just check the chats column for the chat name
-if ($row["chats"] === null || !is_file("C:/WAMP/apache2/gtdocs/spiteful-chat/chats/$c") || !str_contains($row["chats"], $c)) {
+if ($row["chats"] === null || !is_file("$private/chats/$c") || !str_contains($row["chats"], $c)) {
   http_response_code(404);
   // include 404 error doc here
   die();
 }
 
 // check that media file exists
-if (!is_file("C:/WAMP/apache2/gtdocs//spiteful-chat/chats/media/$mediaFilename")) {
+if (!is_file("$private/chats/media/$mediaFilename")) {
   http_response_code(404);
   // include 404 error doc here
   die();
 }
 
-$mediaContent = file_get_contents("C:/WAMP/apache2/gtdocs/spiteful-chat/chats/media/$mediaFilename");
+$mediaContent = file_get_contents("$private/chats/media/$mediaFilename");
 
 header("Cache-Control: no-cache, must-revalidate");
 header("Content-Type: $mediaMimeType");
@@ -85,7 +86,7 @@ if (isset($_GET["download"])) {
   header("Expires: 0");
   // filename has to be in double quotes (")
   header('Content-Disposition: attachment; filename="' . $downloadName . '"');
-  header('Content-Length: ' . filesize("C:/WAMP/apache2/gtdocs/spiteful-chat/chats/media/$mediaFilename"));
+  header('Content-Length: ' . filesize("$private/chats/media/$mediaFilename"));
   header('Pragma: public');
 }
 
