@@ -61,7 +61,7 @@ if (!isset($_POST['credential'])) {
       $row = $result -> fetch_assoc();
 
       session_start();
-      $_SESSION["id"] = $row["id"];
+      $_SESSION["id"] = $row["user_id"];
       $_SESSION["token"] = $token;
       header("Location: dashboard");
     }

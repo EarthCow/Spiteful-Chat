@@ -1,5 +1,11 @@
 <?php
 
+use LDAP\Result;
+
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 if (!isset($_POST['process']) || !isset($_POST['data'])) {
   header("Location: ."); // Redirects to /spiteful-chat/
   die();
@@ -14,12 +20,12 @@ if (!isset($_POST['process']) || !isset($_POST['data'])) {
     require_once("$private/database.php");
     $connection = $GLOBALS['connection'];
 
-    $id = $_SESSION['id'];
+    $userId = $_SESSION['id'];
     $token = $_SESSION['token'];
 
-    $sql = "SELECT * FROM `profiles` WHERE `id`=?";
+    $sql = "SELECT * FROM `profiles` WHERE `user_id`=?";
     $statement = $connection->prepare($sql);
-    $statement->bind_param("i", $id);
+    $statement->bind_param("i", $userId);
     $statement->execute() or die("An error occurred CSDB10"); // Code select database 10 double digits for distinction
     $result = $statement->get_result();
 
@@ -44,13 +50,20 @@ if (!isset($_POST['process']) || !isset($_POST['data'])) {
           $response = ["ok" => false, "statusText" => "Invalid username"];
           switch ($process) {
             case 'getActiveDms':
-              if ($row["chats"] !== null) {
-                $chats = json_decode($row["chats"], true);
-              } else {
-                $chats = [];
-              }
-            
-              $response = ["ok" => true, "chats" => $chats];
+              $sql = "
+              SELECT chats.chat_id, chats.last_message, chats.modified, profiles.username, profiles.name, profiles.picture
+              FROM `chats`
+              JOIN `profiles`
+              ON IF(chats.sender = $userId, chats.receiver = profiles.user_id, chats.sender = profiles.user_id)
+              WHERE chats.sender = $userId OR chats.receiver = $userId
+              ORDER BY `modified` DESC;
+              ";
+              $result = $connection -> query($sql) or die("An error occurred CULA1");// Code update last active 1
+
+              $row = $result->fetch_all(MYSQLI_ASSOC);
+
+              // if there are no rows (chats) then send an empty array
+              $response = ["ok" => true, "chats" => (($row === null) ? [] : $row)];
               die(json_encode($response));
 
               break;
@@ -61,10 +74,10 @@ if (!isset($_POST['process']) || !isset($_POST['data'])) {
                 $response["statusText"] = "Invalid Operation";
                 die(json_encode($response));
               }
-              $recipient = $data;
+              $receiver = $data;
 
-              // confirm the $recipient is in a valid format
-              if (preg_match('/[-!#@$%^&*()_+|~=`{}\[\]:\";\'<>?,.\\\\\/\s]/', $recipient)) {
+              // confirm the $receiver is in a valid format
+              if (preg_match('/[-!#@$%^&*()_+|~=`{}\[\]:\";\'<>?,.\\\\\/\s]/', $receiver)) {
                 $response["statusText"] = "Invalid Operation";
                 die(json_encode($response));
               }
@@ -72,7 +85,7 @@ if (!isset($_POST['process']) || !isset($_POST['data'])) {
               // check the db for a user with that username
               $sql = "SELECT * FROM `profiles` WHERE `username`=?";
               $statement = $connection -> prepare($sql);
-              $statement -> bind_param("s", $recipient);
+              $statement -> bind_param("s", $receiver);
               $statement -> execute() or die();
               $result = $statement -> get_result();
 
@@ -81,62 +94,45 @@ if (!isset($_POST['process']) || !isset($_POST['data'])) {
                 die(json_encode($response));
               }
 
-              // get the db row for the recipient
-              $recipientRow = $result -> fetch_assoc();
+              // get the db row for the receiver
+              $receiverRow = $result -> fetch_assoc();
+              $receiverId = $receiverRow["user_id"];
 
-              $theChat = json_decode($row["chats"], true)[$recipientRow["id"]];
+              // $sql = "SELECT `chat_id` FROM `chats` WHERE (`sender` = $userId AND `receiver` = $receiverId) OR (`sender` = $receiverId AND `receiver` = $userId)";
 
-              $chatFileSize = filesize("$private/chats/".$theChat["filename"]);
+              // basically instead of finding the chat id in a different query
+              // we can use a join statement and a carefully dictated where statement
+              // to eliminate the need for an additional query
+              $sql = "
+              SELECT messages.msg_id, messages.sender, messages.media, messages.content, messages.timestamp
+              FROM chats
+              JOIN messages
+              ON chats.chat_id = messages.chat_id
+              WHERE (chats.sender = $userId AND chats.receiver = $receiverId) OR (chats.sender = $receiverId AND chats.receiver = $userId)
+              ";
 
-              $messagesJson = [];
+              $result = $connection -> query($sql);
 
-              // false is failure 0 is also false but not a failure must use "==="
-              if ($chatFileSize === false) {
-                $response["statusText"] = "Failed to retrieve information";
+              if (!$result) {
+                $response["statusText"] = "Failed to retreive messages";
                 die(json_encode($response));
-              } elseif ($chatFileSize) {
-                $theChatFile = fopen("$private/chats/".$theChat["filename"], "r");
-                $messages = fread($theChatFile, $chatFileSize);
-  
-                // this is an array of messages "4:231323:content:..."
-                $messagesArr = explode(";", $messages);
-  
-                // removes the first ""
-                array_shift($messagesArr);
-  
-                // an array of the messages further broken down into arrays
-                $messagesJson = [];
-  
-                foreach ($messagesArr as $message) {
-                  if (count($messageArr = explode(":", $message)) < 4) {
-                    list($senderId, $timestamp, $content) = $messageArr;
-                    $date = date("m/d/Y h:i:s", $timestamp);
-                    $mine = ($senderId == $id);
-                    $message = [
-                      "mine"    => $mine,
-                      "date"    => $date,
-                      "content" => htmlentities(base64_decode($content))
-                    ];
-                    array_push($messagesJson, $message);
-                  } else {
-                    list($senderId, $timestamp, $mediaFilename, $mediaMimeType, $originalFilename) = $messageArr;
-                    $date = date("m/d/Y h:i:s", $timestamp);
-                    $mine = ($senderId == $id);
-                    $message = [
-                      "mine"     => $mine,
-                      "date"     => $date,
-                      "content"  => "https://earthcow.xyz/spiteful-chat/media?name=$mediaFilename&type=".urlencode($mediaMimeType)."&og=".urlencode(base64_decode($originalFilename))."&c=".$theChat["filename"],
-                      "type"     => $mediaMimeType,
-                      "og"       => base64_decode($originalFilename)
-                    ];
-                    array_push($messagesJson, $message);
-                  }
-                }
               }
 
-              $response = ["ok" => true, "messages" => $messagesJson];
-              die(json_encode($response));
+              $messages = $result->fetch_all(MYSQLI_ASSOC);
 
+              foreach ($messages as $messageKey => $messageArr) {
+                $messageArr["date"] = date("m/d/Y h:i:s", strtotime($messageArr["timestamp"]));
+                unset($messageArr["timestamp"]);
+                $messageArr["mine"] = ($messageArr["sender"] == $userId);
+                unset($messageArr["sender"]);
+                if ($messageArr["media"] !== NULL) {
+                  $messageArr["content"] = "earthcow.xyz/spiteful-chat/media?id=" . $messageArr["msg_id"];
+                } else unset($messageArr["media"]);
+                $messages[$messageKey] = $messageArr;
+              }
+
+              $response = ["ok" => true, "messages" => $messages];
+              die(json_encode($response));
 
               break;
             
@@ -146,17 +142,17 @@ if (!isset($_POST['process']) || !isset($_POST['data'])) {
                 die(json_encode($response));
               }
               
-              list($recipient, $message) = json_decode($data, true);
+              list($receiver, $message) = json_decode($data, true);
 
-              if (preg_match('/[-!#@$%^&*()_+|~=`{}\[\]:\";\'<>?,.\\\\\/\s]/', $recipient)) {
+              if (preg_match('/[-!#@$%^&*()_+|~=`{}\[\]:\";\'<>?,.\\\\\/\s]/', $receiver)) {
                 $response["statusText"] = "Invalid Operation";
                 die(json_encode($response));
               }
               
               $sql = "SELECT * FROM `profiles` WHERE `username`=?";
               $statement = $connection -> prepare($sql);
-              $statement -> bind_param("s", $recipient);
-              $statement -> execute() or die();
+              $statement -> bind_param("s", $receiver);
+              $statement -> execute();
               $result = $statement -> get_result();
 
               if ($result -> num_rows == 0) {
@@ -164,48 +160,32 @@ if (!isset($_POST['process']) || !isset($_POST['data'])) {
                 die(json_encode($response));
               }
 
-              $recipientRow = $result -> fetch_assoc();
+              $receiverRow = $result -> fetch_assoc();
+              $receiverId = $receiverRow["user_id"];
 
-              $chats = json_decode($row["chats"], true);
+              $sql = "SELECT chat_id FROM chats WHERE (sender = $userId AND receiver = $receiverId) OR (sender = $receiverId AND receiver = $userId)";
+              $result = $connection -> query($sql);
 
-              if (!isset($chats[$recipientRow["id"]])) {
-                $response["statusText"] = "Unknown";
+              if ($result -> num_rows != 1) {
+                $response["statusText"] = "Invalid Operation";
                 die(json_encode($response));
               }
-              
-              $theChat = $chats[$recipientRow["id"]];
-              $recipientChats = json_decode($recipientRow["chats"], true);
 
-              $recipientChats[$row["id"]]["lastMessage"] = $message;
-              $chats[$recipientRow["id"]]["lastMessage"] = $message;
-              $message = ";$id:".time().":".base64_encode($message);
+              $row = $result ->fetch_assoc();
+              $chatId = $row["chat_id"];
 
-              $myfile = file_put_contents("$private/chats/".$theChat["filename"], $message.PHP_EOL , FILE_APPEND | LOCK_EX);
-
-              $lm = date("m/d/Y h:i:s", $timestamp = time());
-              $recipientChats[$row["id"]]["lastModified"] = $lm;
-              $chats[$recipientRow["id"]]["lastModified"] = $lm;
-
-              $recipientChats[$row["id"]]["lastModifiedTime"] = $timestamp;
-              $chats[$recipientRow["id"]]["lastModifiedTime"] = $timestamp;
-
-              $chatsStr = json_encode($chats);
-              $recipientChatsStr = json_encode($recipientChats);
-
-              $sql = "UPDATE `profiles` SET `chats`=? WHERE id=?";
+              $sql = "INSERT INTO `messages` (chat_id, sender, content) VALUES ($chatId, $userId, ?)";
               $statement = $connection -> prepare($sql);
+              $statement -> bind_param("s", $message);
+              $statement -> execute();
 
-              // update recievers chat db
-              $statement -> bind_param("si", $chatsStr, $id);
-              $statement -> execute() or die();
+              $sql = "UPDATE chats SET last_message = ? WHERE chat_id = $chatId";
+              $statement = $connection -> prepare($sql);
+              $statement -> bind_param("s", $message);
+              $statement -> execute();
 
-              // update recipients chat db
-              $statement -> bind_param("si", $recipientChatsStr, $recipientRow["id"]);
-              $statement -> execute() or die();
-
-              $response = ["ok" => true, "lm" => $lm];
+              $response = ["ok" => true, "lm" => date("m/d/Y h:i:s")];
               die(json_encode($response));
-
 
               break;
 
@@ -302,7 +282,7 @@ if (!isset($_POST['process']) || !isset($_POST['data'])) {
                 $response["statusText"] = "Be more original dude c'mon";
                 die(json_encode($response));
               }
-              $sql = "UPDATE `profiles` SET `username`=? WHERE `id`=$id";
+              $sql = "UPDATE `profiles` SET `username`=? WHERE `user_id`=$userId";
               $statement = $connection -> prepare($sql);
               $statement -> bind_param("s", $data);
               $statement -> execute();
@@ -324,7 +304,7 @@ if (!isset($_POST['process']) || !isset($_POST['data'])) {
                 $response["statusText"] = "Fucking dumbass no you cannot message yourself lonely ass";
                 die(json_encode($response));
               }
-              $sql = "SELECT * FROM `profiles` WHERE `username`=?";
+              $sql = "SELECT `user_id`, `username`, `name`, `picture` FROM `profiles` WHERE `username`=?";
               $statement = $connection -> prepare($sql);
               $statement -> bind_param("s", $data);
               $statement -> execute() or die();
@@ -335,92 +315,34 @@ if (!isset($_POST['process']) || !isset($_POST['data'])) {
                 die(json_encode($response));
               }
 
-              $recipientRow = $result -> fetch_assoc();
-              $recipientId = $recipientRow["id"];
+              $receiverRow = $result -> fetch_assoc();
+              $receiverId = $receiverRow["user_id"];
 
-                // this is representing the chat between the recipient and the sender
-                $theChat = false;
-                // see if the sender's column chat is not null
-                if ($row["chats"] !== null) {
-                  $chats = json_decode($row["chats"], true);
-                  if (isset($chats[$recipientId])) {
-                    $theChat = $chats[$recipientId];
-                  }
-                } else {
-                  $chats = [];
-                }
+              $sql = "SELECT `chat_id` FROM `chats` WHERE `sender` = $receiverId OR `receiver` = $receiverId";
+              $result = $connection -> query($sql);
 
-                $alreadyExists = false;
-                if ($theChat === false) {
-                  $chatFilename = uniqid(rand(), true);
-                  // this is the key that will be used to decrypt the chat file it must be stored in base64 or otherwise the json cannot encode
-                  $chatFileKey = base64_encode(openssl_random_pseudo_bytes(128));
-                  $lm = date("m/d/Y h:i:s", $timestamp = time());
-                  $chats[$recipientId] = [
-                      "filename"         => $chatFilename,
-                      // "key"            => $chatFileKey,
-                      "recipient"        => $recipientRow["username"],
-                      "recipientName"    => $recipientRow["name"],
-                      "recipientImage"   => $recipientRow["picture"],
-                      "lastMessage"      => null,
-                      "lastModified"     => $lm,
-                      "lastModifiedTime" => $timestamp
-                  ];
+              if ($result -> num_rows != 0) {
+                $response = ["ok" => true, "receiver" => ["username" => $receiverRow["username"]],"alreadyExists" => true];
+                die(json_encode($response));
+              }
 
-                  if (!$chatFile = fopen("$private/chats/$chatFilename", "w")) {
-                    $response["statusText"] = "Failed to dedicate new chat file";
-                    die(json_encode($response));
-                  }
-                
-                  fclose($chatFile);
+              $sql = "INSERT INTO `chats` (`sender`, `receiver`) VALUES ($userId, $receiverId);";
+              $result = $connection -> query($sql);
 
-                  $recipientChats = [];
-                  if ($recipientRow["chats"] !== null) {
-                    $recipientChats = json_decode($recipientRow["chats"], true);
-                  }
-                  $recipientChats[$id] = [
-                      "filename"         => $chatFilename,
-                      // "key"            => $chatFileKey,
-                      "recipient"        => $row["username"],
-                      "recipientName"    => $row["name"],
-                      "recipientImage"   => $row["picture"],
-                      "lastMessage"      => null,
-                      "lastModified"     => $lm,
-                      "lastModifiedTime" => $timestamp
-                  ];
-
-                  $sql = "UPDATE `profiles` SET `chats`=? WHERE id=?";
-                  $statement = $connection -> prepare($sql);
-                  
-                  $strChats = json_encode($chats);
-                  // update my chat db
-                  $statement -> bind_param("si", $strChats, $id);
-                  $statement -> execute() or die();
-
-                  $strRecChats = json_encode($recipientChats);
-                  // update recipients chat db
-                  $statement -> bind_param("si", $strRecChats, $recipientId);
-                  $statement -> execute() or die();
-
-                } else {
-                  $chatFilename = $theChat;
-                  $alreadyExists = true;
-                }
-
-
-
-              
-
-              $response = ["ok" => true, "chat" => $chats[$recipientId], "alreadyExists" => $alreadyExists];
-              die(json_encode($response));
-
+              if (!$result) {
+                $response = ["statusText" => "Failed to created a new conversation"];
+                die(json_encode($response));
+              } else {
+                $response = ["ok" => true, "receiver" => $receiverRow];
+                die(json_encode($response));
+              }
 
               break;
             
             case "administrator":
               // restrict access only to administrators
               $administrators = [1];
-              if (!in_array($id, $administrators)) {
+              if (!in_array($userId, $administrators)) {
                 $response["statusText"] = "Invalid request :(";
                 die(json_encode($response));
               }
