@@ -318,11 +318,11 @@ if (!isset($_POST['process']) || !isset($_POST['data'])) {
               $receiverRow = $result -> fetch_assoc();
               $receiverId = $receiverRow["user_id"];
 
-              $sql = "SELECT `chat_id` FROM `chats` WHERE `sender` = $receiverId OR `receiver` = $receiverId";
+              $sql = "SELECT `chat_id` FROM `chats` WHERE (sender = $userId AND receiver = $receiverId) OR (sender = $receiverId AND receiver = $userId)";
               $result = $connection -> query($sql);
 
               if ($result -> num_rows != 0) {
-                $response = ["ok" => true, "receiver" => ["username" => $receiverRow["username"]],"alreadyExists" => true];
+                $response = ["ok" => true, "receiver" => ["username" => $receiverRow["username"]], "alreadyExists" => true];
                 die(json_encode($response));
               }
 
