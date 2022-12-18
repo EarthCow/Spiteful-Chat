@@ -175,7 +175,6 @@ function sendMessage(recipient) {
       isSending = true
       $.post("processes", { process: "sendMessage", data: JSON.stringify([recipient, message]) })
         .then((result) => {
-          console.log(result);
           // resets the isSending to false
           isSending = false
 
@@ -184,7 +183,6 @@ function sendMessage(recipient) {
 
           // verify the result is indeed json and sets the result to the json value
           if (result = verifyResultJSON(result)) {
-
             if (result.ok) {
               // set last message
               lastMsgSpan.text(message)
@@ -291,7 +289,7 @@ function focusDm(recipient, recipientName) {
             // run the iteration on each message
             result.messages.forEach(message => {
               // if the message doesn't have a subsequent media variable it is NOT media
-              if (!message.media) {
+              if (!message.type) {
                 // generate the html text message
                 messageElements += `
                   <div class="messageWrapper${((message.mine) ? " myMessage" : "")}" title="${message.date}">
@@ -303,8 +301,7 @@ function focusDm(recipient, recipientName) {
                 // this is used for messages that ARE media
 
                 // split the mime type and get the first type (video/mp4 -> "video")
-                console.log(message)
-                var generalType = message.media.split("/")[0]
+                var generalType = message.type.split("/")[0]
                 // switch through the general types to create type specific message elements
                 switch (generalType) {
                   case "image":
@@ -313,7 +310,7 @@ function focusDm(recipient, recipientName) {
                   case "video":
                     var spanContent = `
                       <video controls>
-                        <source src="${message.content}" type="${message.media}">
+                        <source src="${message.content}" type="${message.type}">
                       </video>
                     `
                     break;
@@ -325,7 +322,7 @@ function focusDm(recipient, recipientName) {
                           <button><i class="fa-solid fa-eye"></i></button>
                           <i class="fa-solid fa-file"></i>
                           &nbsp;
-                          ${message.og}
+                          ${message.original}
                         </span>
                         &nbsp;
                         <a href="${message.content}&download"><i class="fa-solid fa-download"></i></a>
@@ -594,7 +591,6 @@ function newMessage() {
           } else {
             return $.post("processes", { process: "newRecipient", data: username })
               .then(response => {
-                console.log(response);
                 if (response = verifyResultJSON(response)) {
                   if (!response.ok) {
                     throw new Error(response.statusText)
@@ -655,9 +651,6 @@ function adminRequest(request = "clear", data = 896) {
     data:JSON.stringify({request: request, data: data})
   })
   .then(function(result){
-    if (result = verifyResultJSON(result)) {
-      console.log(result.statusText)
-      console.log(result.files)
-    }
+    console.log(result)
   })
 }
