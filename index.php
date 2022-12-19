@@ -4,23 +4,23 @@ if (isset($_SESSION['id'])) {
   header("Location: dashboard");
   die();
 }
-?><!doctype html>
+?>
+<!doctype html>
 <html>
-    <head>
-      <title>Spiteful Chat</title>
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <meta name="google-signin-client_id" content="905753697514-bat1tv7nld4ltb4fhfo9op5gmf93jggj.apps.googleusercontent.com">
+
+<head>
+  <title>Spiteful Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="google-signin-client_id" content="905753697514-bat1tv7nld4ltb4fhfo9op5gmf93jggj.apps.googleusercontent.com">
   <style>
-    html, body {
+    html,
+    body {
       width: 100%;
       height: 100%;
       margin: 0;
       padding: 0;
     }
-    body {
-      background-color: #393939;
-      color: #f2f2f2;
-    }
+
     .container {
       width: 100%;
       height: 100%;
@@ -28,46 +28,65 @@ if (isset($_SESSION['id'])) {
       align-items: center;
       flex-flow: column;
     }
+
     .wrapper {
       display: flex;
       flex-flow: column;
       gap: 5px;
       padding: 1rem;
-      background-color: #404040;
-      border-radius: 0.75rem;
+
+
+      border-radius: 12px;
+      box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
     }
-    h2, h3, h4, h5, h6 {
+
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
       margin: 0;
       padding: 0;
     }
+
+    /* MEDIA TAGS */
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --text: #f2f2f2;
+        --outside: #303030;
+        --inside: #383838;
+        --inside-detail: #505050;
+      }
+
+      body {
+        background-color: var(--outside);
+        color: var(--text);
+      }
+
+      .wrapper {
+        background-color: var(--inside);
+      }
+
+    }
   </style>
 </head>
+
 <body>
   <div class="container">
     <h1>Welcome to Spiteful Chat</h1>
     <div class="wrapper">
       <h3>Hello</h3>
       <h5>Please login or sign up to continue</h5>
-      <div id="g_id_onload"
-          data-client_id="905753697514-bat1tv7nld4ltb4fhfo9op5gmf93jggj.apps.googleusercontent.com"
-          data-context="signin"
-          data-ux_mode="redirect"
-          data-login_uri="https://earthcow.xyz/spiteful-chat/cwg"
-          data-nonce=""
-          data-auto_prompt="false">
+      <div id="g_id_onload" data-client_id="905753697514-bat1tv7nld4ltb4fhfo9op5gmf93jggj.apps.googleusercontent.com" data-context="signin" data-ux_mode="redirect" data-login_uri="https://earthcow.xyz/spiteful-chat/cwg" data-nonce="" data-auto_prompt="false">
       </div>
 
-      <div class="g_id_signin"
-          data-type="standard"
-          data-shape="pill"
-          data-theme="filled_black"
-          data-text="continue_with"
-          data-size="large"
-          data-logo_alignment="left">
+      <div class="g_id_signin" data-type="standard" data-shape="pill" data-theme="filled_black" data-text="continue_with" data-size="large" data-logo_alignment="left">
       </div>
     </div>
   </div>
 
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </body>
+
 </html>

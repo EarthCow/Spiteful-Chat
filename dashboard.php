@@ -11,8 +11,8 @@ if (!isset($_SESSION['id']) || !isset($_SESSION['token'])) {
   header("Location: .");// Redirects to /spiteful-chat/
   die();
 } else {
-  $id = $_SESSION['id'];
-  if ($restrictAccess && !in_array($id, $administrators)) {
+  $userId = $_SESSION['id'];
+  if ($restrictAccess && !in_array($userId, $administrators)) {
     header("Location: maintenance");
     die();
   }
@@ -21,9 +21,9 @@ if (!isset($_SESSION['id']) || !isset($_SESSION['token'])) {
   require_once("/WAMP/apache2/gtdocs/spiteful-chat/database.php");
   $connection = $GLOBALS['connection'];
 
-  $sql = "SELECT * FROM `profiles` WHERE `id`=?";
+  $sql = "SELECT * FROM `profiles` WHERE `user_id`=?";
   $statement = $connection -> prepare($sql);
-  $statement -> bind_param("i", $id);
+  $statement -> bind_param("i", $userId);
   $statement -> execute() or die("An error occurred CSDB10");// Code select database 10 double digits for distinction
   $result = $statement -> get_result();
 
@@ -46,7 +46,7 @@ if (!isset($_SESSION['id']) || !isset($_SESSION['token'])) {
         die();
       } else {
 
-        $sql = "UPDATE `profiles` SET `last_active`=CURRENT_TIMESTAMP WHERE `id`=$id";
+        $sql = "UPDATE `profiles` SET `last_active`=CURRENT_TIMESTAMP WHERE `user_id`=$userId";
         $connection -> query($sql) or die("An error occurred CULA1");// Code update last active 1
 
 

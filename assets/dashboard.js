@@ -31,7 +31,7 @@ function verifyResultJSON(result) {
         timer: 5000,
         timerProgressBar: true
       }).then(function () {
-        window.location.reload()
+        //window.location.reload()
       })
     }
     return false
@@ -58,43 +58,15 @@ function getActiveDms() {
           // Hide the loading animation
           $(".profiles-block .loader").hide()
 
-          // Need to order the dms in newest to oldest
-
-          // chatTimes is just an array of all the chat times
-          // chatTimesKeys is [$time => $recipientId] with $recipientId being the key to the result.chats array
-          let chatTimes = [], chatTimesKeys = []
-
-          // run a loop foreach chat
-          for (var key of Object.keys(result.chats)) {
-            let chat = result.chats[key]
-
-            // verify there are no occurences of the same key
-            // this would be incredibly rare but possible
-            while (chatTimes.includes(chat.lastModifiedTime)) {
-              chat.lastModifiedTime++
-            }
-
-            // pushes the time from the chat
-            chatTimes.push(chat.lastModifiedTime)
-            // makes the time a key for the key of this chat
-            chatTimesKeys[chat.lastModifiedTime] = key
-
-          }
-
-          // sort from greatest to least
-          chatTimes.sort((a, b) => b - a)
-
-          // run another loop on the sorted array to create the dm elements in the correct order
-          chatTimes.forEach(time => {
+          result.chats.forEach(chat => {
             // uses the time from the ordered array to get the key for the chat
-            let chat = result.chats[chatTimesKeys[time]]
 
             $("#profiles-list").append(`
-            <li data-identifier="dm-${chat.recipient}">
+            <li data-identifier="dm-${chat.username}">
               <div class="wrapper">
-                <img src="${chat.recipientImage}">
+                <img src="${chat.picture}">
                 <span>
-                  <strong>${chat.recipient}</strong>
+                  <strong>${chat.username}</strong>
                   <br>
                   <span></span>
                 </span>
@@ -103,14 +75,14 @@ function getActiveDms() {
             `)
 
             $("#profiles-list li:last-child").on("click", function () {
-              focusDm(chat.recipient, chat.recipientName)
+              focusDm(chat.username, chat.name)
             })
 
             // This must be done right now to prevent html
-            $(`[data-identifier=dm-${chat.recipient}]`).find("span").eq(1).text(((chat.lastMessage) ? chat.lastMessage : ""))
+            $(`[data-identifier=dm-${chat.username}]`).find("span").eq(1).text(((chat.last_message) ? chat.last_message : ""))
 
             // Push the username to the array of all DMs
-            activeDms.push(chat.recipient)
+            activeDms.push(chat.username)
           })
         }
       }
@@ -211,7 +183,6 @@ function sendMessage(recipient) {
 
           // verify the result is indeed json and sets the result to the json value
           if (result = verifyResultJSON(result)) {
-
             if (result.ok) {
               // set last message
               lastMsgSpan.text(message)
@@ -317,7 +288,7 @@ function focusDm(recipient, recipientName) {
             let messageElements = ""
             // run the iteration on each message
             result.messages.forEach(message => {
-              // if the message doesn't have a subsequent type variable it is NOT media
+              // if the message doesn't have a subsequent media variable it is NOT media
               if (!message.type) {
                 // generate the html text message
                 messageElements += `
@@ -330,7 +301,6 @@ function focusDm(recipient, recipientName) {
                 // this is used for messages that ARE media
 
                 // split the mime type and get the first type (video/mp4 -> "video")
-                console.log(message)
                 var generalType = message.type.split("/")[0]
                 // switch through the general types to create type specific message elements
                 switch (generalType) {
@@ -352,7 +322,7 @@ function focusDm(recipient, recipientName) {
                           <button><i class="fa-solid fa-eye"></i></button>
                           <i class="fa-solid fa-file"></i>
                           &nbsp;
-                          ${message.og}
+                          ${message.original}
                         </span>
                         &nbsp;
                         <a href="${message.content}&download"><i class="fa-solid fa-download"></i></a>
@@ -363,7 +333,7 @@ function focusDm(recipient, recipientName) {
                 
                 messageElements += `
                   <div class="messageWrapper${((message.mine) ? " myMessage" : "")}" title="${message.date}">
-                    <img src="${((message.mine) ? myPfp : $(`[data-identifier=dm-${recipient}] img`).attr("src"))}">
+                    <img src="${((message.mine) ? myPfp : recipientImage)}">
                     <span>${spanContent}</span>
                   </div>
                 `
@@ -621,11 +591,11 @@ function newMessage() {
           } else {
             return $.post("processes", { process: "newRecipient", data: username })
               .then(response => {
-                console.log(response);
                 if (response = verifyResultJSON(response)) {
                   if (!response.ok) {
                     throw new Error(response.statusText)
                   }
+                  response.username = username
                   return response
                 }
               })
@@ -643,33 +613,33 @@ function newMessage() {
   }).then((result) => {
     if (result.isConfirmed) {
       if (typeof result.value == "object") {
+        let receiver = result.value.receiver.username
         if (result.value.alreadyExists) {
           Toast.fire({
             icon: "info",
-            title: "You already have a conversation with " + result.value.chat.recipient
+            title: "You already have a conversation with @" + receiver
           })
-          $("[data-identifier=dm-"+result.value.chat.recipient+"]").click()
+          $("[data-identifier=dm-"+receiver+"]").click()
           return false
         }
-        let recipient = result.value.chat.recipient
         $("#profiles-list").prepend(`
-          <li data-identifier="dm-${recipient}">
+          <li data-identifier="dm-${receiver}">
             <div class="wrapper">
-              <img src="${result.value.chat.recipientImage}">
+              <img src="${result.value.receiver.picture}">
               <span>
-                <strong>${recipient}</strong>
+                <strong>${receiver}</strong>
                 <br>
-                <span>${((result.value.chat.lastMessage) ? result.value.chat.lastMessage : "")}</span>
+                <span></span>
               </span>
             </div>
           </li>
         `)
-        activeDms.push(recipient)
+        activeDms.push(receiver)
         $("#profiles-list li:first-child").on("click", function (event) {
-          focusDm(recipient, result.value.chat.recipientName)
+          focusDm(receiver, result.value.receiver.name)
         })
   
-        focusDm(recipient, result.value.chat.recipientName)
+        focusDm(receiver, result.value.receiver.name)
       }
     }
   })
@@ -681,9 +651,6 @@ function adminRequest(request = "clear", data = 896) {
     data:JSON.stringify({request: request, data: data})
   })
   .then(function(result){
-    if (result = verifyResultJSON(result)) {
-      console.log(result.statusText)
-      console.log(result.files)
-    }
+    console.log(result)
   })
 }
