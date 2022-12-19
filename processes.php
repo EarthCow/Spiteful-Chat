@@ -358,16 +358,14 @@ if (!isset($_POST['process']) || !isset($_POST['data'])) {
                 $sql = "TRUNCATE TABLE media;TRUNCATE TABLE messages;TRUNCATE TABLE chats;";
                 $result = $connection -> multi_query($sql);
 
-                $deletedFiles = [];
                 $files = glob("$private/chats/media/*");
-                array_push($deletedFiles, $files);
                 foreach($files as $file){
                   if(is_file($file)) {
                     unlink($file);
                   }
                 }
 
-                die(var_dump($result, $deletedFiles));
+                die(var_dump($result, $files));
               }
 
               break;

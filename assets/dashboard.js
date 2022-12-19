@@ -13,7 +13,12 @@ const Toast = Swal.mixin({
 })
 
 function verifyResultJSON(result) {
-  if (!result.includes("{")) {
+  let parsed
+  try {
+    parsed = JSON.parse(result)
+  }
+  catch (error) {
+    console.log(error)
     if (result == "SESS") {
       Swal.fire(
         "Info",
@@ -35,7 +40,8 @@ function verifyResultJSON(result) {
       })
     }
     return false
-  } else return JSON.parse(result)
+  }
+  return parsed
 }
 
 let activeDms = []
@@ -310,7 +316,7 @@ function focusDm(recipient, recipientName) {
                   case "video":
                     var spanContent = `
                       <video controls>
-                        <source src="${message.content}" type="${message.type}">
+                        <source src="${message.content}" type="${((message.type == "video/quicktime") ? "video/mp4" : message.type)}">
                       </video>
                     `
                     break;
