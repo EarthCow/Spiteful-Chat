@@ -227,13 +227,13 @@ class Chat {
   }
   init() {
     // verify the chat is in the array of chats
-    // if (!my.chats[this]) {
-    //   Toast.fire({
-    //     icon: "error",
-    //     title: "Error"
-    //   })
-    //   return;
-    // }
+    if (!my.chats[this.username]) {
+      Toast.fire({
+        icon: "error",
+        title: "Error"
+      })
+      return;
+    }
 
     // this is purely for the mobile version
     // on the mobile version the .profiles-list collapses whenever a chat is selected
@@ -261,29 +261,27 @@ class Chat {
 
       // set listeners
 
-      let msgBox = $(".msg")
+      let $msgBox = $(".msg")
 
-      msgBox.off()
+      $msgBox.off()
 
-      msgBox.on("keyup", function (e) {
-        fixMessageBoxHeight(msgBox)
+      $msgBox.on("keyup", function (e) {
+        fixMessageBoxHeight($msgBox)
       })
-      msgBox.on("keydown", function (e) {
+      $msgBox.on("keydown", function (e) {
         // if the user presses enter without shift it will submit
         if (e.which == 13 && !e.shiftKey) {
           // prevent a new line from being inputed
           e.preventDefault()
-          msgBox.next().click()
+          $msgBox.next().click()
         }
       })
 
       $(".sendBtn").off()
-
       $(".sendBtn").on("click", () => this.message())
 
       $(".mediaBtn").off()
-
-      $(".mediaBtn").on("click", () => this.upload())
+      $(".mediaBtn").on("click", () => upload(this))
     }
 
     // hide the "nothing to see here" text
@@ -425,7 +423,18 @@ class Chat {
       }
     })
   }
-  upload() {
+}
+
+function upload(chat) {
+  let $status, $innerBar
+  function byteConverter(bytes) {
+    var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    if (bytes == 0) return 'n/a';
+    var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+    if (i == 0) return bytes + ' ' + sizes[i];
+    return (bytes / Math.pow(1024, i)).toFixed(1) + ' ' + sizes[i];
+  }
+  function modal() {
     Swal.fire({
       title: 'Upload',
   
@@ -434,9 +443,16 @@ class Chat {
         <p id="uploadBoxP">Click here or drag and drop</p>
       </div>
       <form style='display:none;' class='uploadForm' method='post' enctype='multipart/form-data'>
-        <input style='display:none;' type='file' id='fileInput' onchange='fileOnchange()'>
+        <input style='display:none;' type='file' id='fileInput'>
       </form>
       `,
+
+      didOpen: () => {
+        $("#fileInput").on("change", function(){
+          let file = this.files[0]
+          $("#uploadBoxP").html(((file) ? `${file.name}<br><span style="color:orange">${byteConverter(file.size)}</span>` : "Click here or drag and drop"))
+        })
+      },
   
       showCancelButton: true,
       reverseButtons: true,
@@ -452,111 +468,7 @@ class Chat {
           return;
         }
 
-        
-
-        let innerBar, status, fileIndex = 1, chat = this;
-        function upload(file) {
-            let newUploadDiv = document.createElement('div');
-            newUploadDiv.id = "uploaderDiv";
-            newUploadDiv.innerHTML = `
-              <div class="uploadingContainer">
-                <div class="inlineRow">
-                  <label for='outerBar' id='fileNameLabel'>${file.name}</label>
-                  <div id='bytes' class='status' style='float:right;'>0B/${byteConverter(file.size)}</div>
-                </div>
-                <div id='outerBar' class='outerBar'>
-                  <div id='innerBar' class='innerBar'></div>
-                </div>
-                <div id='status' class='status'>waiting...</div>
-              </div>
-            `
-            $(Swal.getHtmlContainer()).html(newUploadDiv)
-            innerBar = $("#innerBar")
-            status = $("#status")
-  
-            var formdata = new FormData()
-            formdata.append("file", file)
-            formdata.append("data", chat.username)
-            formdata.append("process", "sendFile")
-  
-            var ajax = new XMLHttpRequest()
-            ajax.upload.addEventListener("progress", progressHandler, false)
-            ajax.addEventListener("load", completeHandler, false)
-            ajax.addEventListener("error", errorHandler, false)
-            ajax.addEventListener("abort", abortHandler, false)
-            ajax.onerror = function (e) {
-              Swal.fire(
-                "Error",
-                "A network error has occurred. Some services may be unavailable.",
-                "error"
-              )
-            }
-            ajax.open("POST", "processes")
-            ajax.send(formdata)
-        }
-  
-        function progressHandler(event) {
-            $("#bytes").html(`Uploaded ${byteConverter(event.loaded)}/${byteConverter(event.total)}`)
-  
-            var percent = Math.round((event.loaded / event.total) * 100)
-  
-            innerBar.animate({ "width": percent + "%" }, .15)
-            innerBar.html(percent + "%")
-  
-            if (percent == 100) {
-              status.css({ fontWeight: "bold", textDecoration: "underline" })
-              status.html("Finalizing, please wait just a little longer...")
-            } else {
-              status.html(percent + "% uploaded... please wait");
-            }
-        }
-        function completeHandler(event) {
-          let result = event.target.responseText
-          console.log(result)
-  
-          result = verifyResultJSON(result)
-  
-          if (!result) {
-            Swal.fire(
-              "Error",
-              "Failed to send file",
-              "error"
-            )
-            return;
-          }
-          if (!result.ok) {
-            Swal.fire(
-              "Error",
-              result.statusText,
-              "error"
-            )
-            return;
-          }
-          Toast.fire({
-            title: "Successfully sent file",
-            icon: "success"
-          })
-
-          chat.createMediaMsg(result.type, result.src, result.date, result.original, true, true)
-
-        }
-  
-        function errorHandler(event) {
-          Swal.fire(
-            "Error",
-            "Failed to send file",
-            "error"
-          )
-        }
-        function abortHandler(event) {
-          Swal.fire(
-            "Error",
-            "Failed to send file",
-            "error"
-          )
-        }
-
-        upload(file)
+        send(file)
   
         // prevents popup from closing
         return false
@@ -565,48 +477,112 @@ class Chat {
       allowOutsideClick: () => !Swal.isLoading()
     })
   }
+  function send(file) {
+    let newUploadDiv = document.createElement('div');
+    newUploadDiv.id = "uploaderDiv";
+    newUploadDiv.innerHTML = `
+      <div class="uploadingContainer">
+        <div class="inlineRow">
+          <label for="outerBar" id="fileNameLabel">${file.name}</label>
+          <div id="bytes" class="status" style="float:right;">0B/${byteConverter(file.size)}</div>
+        </div>
+        <div id="outerBar" class="outerBar">
+          <div id="innerBar" class="innerBar"></div>
+        </div>
+        <div id="status" class="status">waiting...</div>
+      </div>
+    `
+    $(Swal.getHtmlContainer()).html(newUploadDiv)
+    $innerBar = $("#innerBar")
+    $status = $("#status")
+  
+    var formdata = new FormData()
+    formdata.append("file", file)
+    formdata.append("data", chat.username)
+    formdata.append("process", "sendFile")
+  
+    var ajax = new XMLHttpRequest()
+    ajax.upload.addEventListener("progress", progressHandler, false)
+    ajax.addEventListener("load", completeHandler, false)
+    ajax.addEventListener("error", errorHandler, false)
+    ajax.addEventListener("abort", abortHandler, false)
+    ajax.onerror = function (e) {
+      Swal.fire(
+        "Error",
+        "A network error has occurred. Some services may be unavailable.",
+        "error"
+      )
+    }
+    ajax.open("POST", "processes")
+    ajax.send(formdata)
+  }
+  function progressHandler(event) {
+    $("#bytes").html(`Uploaded ${byteConverter(event.loaded)}/${byteConverter(event.total)}`)
+  
+    var percent = Math.round((event.loaded / event.total) * 100)
+  
+    $innerBar.animate({ "width": percent + "%" }, .15)
+    $innerBar.html(percent + "%")
+  
+    if (percent == 100) {
+      $status.css({ fontWeight: "bold", textDecoration: "underline" })
+      $status.html("Finalizing, please wait just a little longer...")
+    } else {
+      $status.html(percent + "% uploaded... please wait");
+    }
+  }
+  function completeHandler(event) {
+    let result = event.target.responseText
+    console.log(result)
+  
+    result = verifyResultJSON(result)
+  
+    if (!result) {
+      Swal.fire(
+        "Error",
+        "Failed to send file",
+        "error"
+      )
+      return;
+    }
+    if (!result.ok) {
+      Swal.fire(
+        "Error",
+        result.statusText,
+        "error"
+      )
+      return;
+    }
+    Toast.fire({
+      title: "Successfully sent file",
+      icon: "success"
+    })
+
+    chat.createMediaMsg(result.type, result.src, result.date, result.original, true, true)
+    chat.$element.find(".lastMsg").text(result.lastMsg)
+    // move dm to the top of the list
+    if (!chat.$element.is(":first-child")) {
+      chat.$element.prependTo("#profiles-list")
+    }
+    chat.msgId++
+  }
+  function errorHandler(event) {
+    Swal.fire(
+      "Error",
+      "Failed to send file",
+      "error"
+    )
+  }
+  function abortHandler(event) {
+    Swal.fire(
+      "Error",
+      "Failed to send file",
+      "error"
+    )
+  }
+
+  modal()
 }
-
-function byteConverter(bytes) {
-  var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-  if (bytes == 0) return 'n/a';
-  var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
-  if (i == 0) return bytes + ' ' + sizes[i];
-  return (bytes / Math.pow(1024, i)).toFixed(1) + ' ' + sizes[i];
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 const Toast = Swal.mixin({
   toast: true,
@@ -697,17 +673,7 @@ function showProfileList() {
   $(".profiles-block").show()
 }
 
-function fileOnchange() {
-  let file = $("#fileInput")[0].files[0],
-    html = (file) ? `${file.name}<br><span style="color:orange">${byteConverter(file.size)}</span>` : "Click here or drag and drop"
-  $("#uploadBoxP").html(html)
-}
-
-function currentRecipient() {
-  return (($(".active-dm")[0]) ? $(".active-dm").attr("data-identifier").replace("dm-", "") : false)
-}
-
-function previewMedia(source, generalType) {
+function previewMedia(type, src) {
 
 }
 
