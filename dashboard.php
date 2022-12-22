@@ -65,7 +65,7 @@ if (!isset($_SESSION['id']) || !isset($_SESSION['token'])) {
     <div class="main">
         <div class="profiles-block">
           <div class="newMsgBtnWrapper">  
-            <button class="newMsgBtn" onclick="newMessage()"><i class="fa-regular fa-pen-to-square"></i>&nbsp;New Message</button>
+            <button class="newMsgBtn" onclick="my.newChat()"><i class="fa-regular fa-pen-to-square"></i>&nbsp;New Message</button>
           </div>
           <div class="profiles-list-wrapper">
             <ul id="profiles-list"></ul>
@@ -73,11 +73,11 @@ if (!isset($_SESSION['id']) || !isset($_SESSION['token'])) {
           </div>
           <div class="my-profile-section">
             <div class="my-profile-block" onclick="profileEditor()">
-              <img id="myPfp" src="<?php echo $row["picture"]; ?>">
+              <img id="myPicture" src="<?php echo $row["picture"]; ?>">
               <div>
-                <span><?php echo $row["name"]; ?></span>
+                <span id="myName"><?php echo $row["name"]; ?></span>
                 <br>
-                <span>@<?php echo $row["username"]; ?></span>
+                <span id="myUsername">@<?php echo $row["username"]; ?></span>
               </div>
             </div>
 
@@ -101,7 +101,7 @@ if (!isset($_SESSION['id']) || !isset($_SESSION['token'])) {
             </div>
           </div>
           <div class="messageBar" style="display:none;">
-            <button class="mediaBtn" onclick="uploadModel()"><i class="fa-solid fa-upload"></i></button>
+            <button class="mediaBtn"><i class="fa-solid fa-upload"></i></button>
             <textarea class="msg" placeholder="message"></textarea>
             <button class="sendBtn"><i class="fa-solid fa-arrow-right"></i></button>
           </div>

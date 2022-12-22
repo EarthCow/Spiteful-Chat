@@ -49,7 +49,7 @@ if (!isset($_POST['process']) || !isset($_POST['data'])) {
 
           $response = ["ok" => false, "statusText" => "Invalid username"];
           switch ($process) {
-            case 'getActiveDms':
+            case 'getChats':
               $sql = "
               SELECT chats.chat_id, chats.last_message, chats.modified, profiles.username, profiles.name, profiles.picture
               FROM `chats`
@@ -267,7 +267,7 @@ if (!isset($_POST['process']) || !isset($_POST['data'])) {
               $sql = "UPDATE chats SET last_message = '$msgTxt' WHERE chat_id = $chatId";
               $result = $connection -> query($sql);
 
-              $response = ["ok" => true, "lm" => date("m/d/Y h:i:s"), "src" => "media?id=" . $msgId, "type" => $_FILES['file']['type'], "og" => $_FILES['file']['name']];
+              $response = ["ok" => true, "date" => date("m/d/Y h:i:s"), "src" => "media?id=" . $msgId, "type" => $_FILES['file']['type'], "og" => $_FILES['file']['name']];
               die(json_encode($response));
 
               break;
@@ -299,7 +299,7 @@ if (!isset($_POST['process']) || !isset($_POST['data'])) {
 
               break;
 
-            case "newRecipient":
+            case "newChat":
               if (empty($data) || preg_match('/[-!#@$%^&*()_+|~=`{}\[\]:\";\'<>?,.\\\\\/\s]/', $data)) {
                 $response["statusText"] = "Invalid username";
                 die(json_encode($response));
