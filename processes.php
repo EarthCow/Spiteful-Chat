@@ -267,7 +267,7 @@ if (!isset($_POST['process']) || !isset($_POST['data'])) {
               $sql = "UPDATE chats SET last_message = '$msgTxt' WHERE chat_id = $chatId";
               $result = $connection -> query($sql);
 
-              $response = ["ok" => true, "date" => date("m/d/Y h:i:s"), "src" => "media?id=" . $msgId, "type" => $_FILES['file']['type'], "og" => $_FILES['file']['name']];
+              $response = ["ok" => true, "date" => date("m/d/Y h:i:s"), "src" => "media?id=" . $msgId, "type" => $_FILES['file']['type'], "original" => $_FILES['file']['name'], "lastMsg" => $msgTxt];
               die(json_encode($response));
 
               break;
