@@ -78,6 +78,36 @@ a {
   font-style: italic!important;
 }
 
+/* centered text with lines from each side */
+
+.centeredWithLines {
+  overflow: hidden;
+  text-align: center;
+
+  color: #808080
+}
+
+.centeredWithLines:before,
+.centeredWithLines:after {
+  background-color: #808080;
+  content: "";
+  display: inline-block;
+  height: 1px;
+  position: relative;
+  vertical-align: middle;
+  width: 50%;
+}
+
+.centeredWithLines:before {
+  right: 0.5em;
+  margin-left: -50%;
+}
+
+.centeredWithLines:after {
+  left: 0.5em;
+  margin-right: -50%;
+}
+
 /* .container is the element centering .main */
 .container {
   width: 100%;
@@ -334,18 +364,14 @@ button:hover,
   flex-direction: row-reverse;
 }
 
-.fileMsg, .fileMsg i {
-  font-size: 1.05rem;
+.fileMsg {
+  font-style: italic;
 }
 .fileMsg span {
   padding:0;
 }
-.fileMsg button {
-  margin:0;
-  padding:0;
-  background-color: transparent;
-  border:none;
-  color: lightskyblue;
+.fileMsg a {
+  color: rgb(0, 128, 208);
 }
 
 /* Message Toolbar */

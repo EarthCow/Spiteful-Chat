@@ -72,7 +72,7 @@ if (!isset($_SESSION['id']) || !isset($_SESSION['token'])) {
             <div class="loader"></div>
           </div>
           <div class="my-profile-section">
-            <div class="my-profile-block" onclick="profileEditor()">
+            <div class="my-profile-block" onclick="my.profile.modal()">
               <img id="myPicture" src="<?php echo $row["picture"]; ?>">
               <div>
                 <span id="myName"><?php echo $row["name"]; ?></span>
@@ -81,7 +81,7 @@ if (!isset($_SESSION['id']) || !isset($_SESSION['token'])) {
               </div>
             </div>
 
-            <button onclick="settings()"><i class="fas fa-gear"></i></button>
+            <button onclick="my.settings.modal()"><i class="fas fa-gear"></i></button>
           </div>
         </div>
         <div class="messages-block">

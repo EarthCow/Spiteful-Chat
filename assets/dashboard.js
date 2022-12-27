@@ -167,6 +167,22 @@ let my = {
 
       chatObj.init()
     })
+  },
+
+  profile : {
+    modal() {
+      Swal.fire({
+        title: "Edit Profile"
+      })
+    }
+  },
+
+  settings : {
+    modal() {
+      Swal.fire({
+        title: "Settings"
+      })
+    }
   }
 }
 
@@ -200,7 +216,6 @@ class Chat {
         spanContent = `
           <div class="fileMsg">
             <span>
-              <button><i class="fa-solid fa-eye"></i></button>
               <i class="fa-solid fa-file"></i>
               &nbsp;
               ${original}
@@ -646,18 +661,6 @@ function showMsgBlock() {
   $(".profiles-block").width(250)
   $(".messages-block").css({"width":"50vw","opacity":1})
   // need to add min width somewhere
-}
-
-function profileEditor() {
-  Swal.fire({
-    title: "Edit Profile"
-  })
-}
-
-function settings() {
-  Swal.fire({
-    title: "Settings"
-  })
 }
 
 function fixMessageBoxHeight(msgBox) {
