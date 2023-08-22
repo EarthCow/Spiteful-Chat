@@ -182,7 +182,9 @@ let my = {
       Swal.fire({
         title: "Settings"
       })
-    }
+    },
+
+    preferredColorScheme : "systemPreference" // options 'dark' 'light' 'systemPreference'
   }
 }
 
