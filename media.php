@@ -18,7 +18,7 @@ if (!isset($_SESSION["id"]) || !isset($_SESSION["token"])) {
   die();
 }
 
-$private = "/WAMP/apache2/gtdocs/spiteful-chat";
+$private = "/var/www/private/spiteful-chat";
 require_once("$private/database.php");
 
 $userId = $_SESSION["id"];

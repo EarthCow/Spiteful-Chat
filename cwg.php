@@ -27,7 +27,7 @@ if (!isset($_POST['credential'])) {
 
   } else {
 
-    require_once("/WAMP/apache2/gtdocs/spiteful-chat/database.php");
+    require_once("/var/www/private/spiteful-chat/database.php");
     $connection = $GLOBALS["connection"];
 
     $google_id = $payload['sub'];

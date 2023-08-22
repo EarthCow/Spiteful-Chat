@@ -1,11 +1,5 @@
 <?php
 
-use LDAP\Result;
-
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
 if (!isset($_POST['process']) || !isset($_POST['data'])) {
   header("Location: ."); // Redirects to /spiteful-chat/
   die();
@@ -16,7 +10,7 @@ if (!isset($_POST['process']) || !isset($_POST['data'])) {
   if (!isset($_SESSION['id']) || !isset($_SESSION['token'])) {
     die("SESS");
   } else {
-    $private = "/WAMP/apache2/gtdocs/spiteful-chat";
+    $private = "/var/www/private/spiteful-chat";
     require_once("$private/database.php");
     $connection = $GLOBALS['connection'];
 

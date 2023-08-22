@@ -18,7 +18,7 @@ if (!isset($_SESSION['id']) || !isset($_SESSION['token'])) {
   }
   $token = $_SESSION['token'];
 
-  require_once("/WAMP/apache2/gtdocs/spiteful-chat/database.php");
+  require_once("/var/www/private/spiteful-chat/database.php");
   $connection = $GLOBALS['connection'];
 
   $sql = "SELECT * FROM `profiles` WHERE `user_id`=?";
