@@ -363,6 +363,12 @@ if (!isset($_POST['process']) || !isset($_POST['data'])) {
               }
 
               break;
+
+            case "getLogin":
+              // get user login info
+              
+              $response = ["ok" => true, "id" => $row['user_id'], "token" => $row['token']];
+              die(json_encode($response));
             
             default:
               $response["statusText"] = "Invalid request :(";

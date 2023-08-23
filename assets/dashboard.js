@@ -1,41 +1,43 @@
 'use strict';
 let my = {
-  username : $("#myUsername").text().replace("@", ""),
-  name     : $("#myName").text(),
-  picture  : $("#myPicture").prop("src"),
-  chats    : [],
+  username: $("#myUsername").text().replace("@", ""),
+  name: $("#myName").text(),
+  picture: $("#myPicture").prop("src"),
+  chats: [],
+  openChat: null,
+  socket: null,
 
   getChats() {
     $.post("processes", {
       process: "getChats",
       data: "896"
     })
-    .then(result => {
-      result = verifyResultJSON(result)
-      if (result === false) {
-        return;
-      }
+      .then(result => {
+        result = verifyResultJSON(result)
+        if (result === false) {
+          return;
+        }
 
-      if (!result.ok) {
-        Toast.fire({
-          icon: "error",
-          title: "Error",
-          text: result.statusText
-        })
-        return;
-      }
+        if (!result.ok) {
+          Toast.fire({
+            icon: "error",
+            title: "Error",
+            text: result.statusText
+          })
+          return;
+        }
 
-      if (!result.chats) {
-        return;
-      }
+        if (!result.chats) {
+          return;
+        }
 
-      // Hide the loading animation
-      $(".profiles-block .loader").hide()
-      
-      result.chats.forEach(chat => {
+        // Hide the loading animation
+        $(".profiles-block .loader").hide()
 
-        let $element = $(document.createElement("li"));
-        $element.append(`
+        result.chats.forEach(chat => {
+
+          let $element = $(document.createElement("li"));
+          $element.append(`
           <div class="wrapper">
             <img src="${chat.picture}">
             <span>
@@ -45,21 +47,21 @@ let my = {
             </span>
           </div>
         `)
-        
-        // encodes html
-        $element.find(".lastMsg").text(((chat.last_message) ? chat.last_message : ""))
-        
-        $("#profiles-list").append($element)
-        
-        let chatObj = new Chat(chat.username, chat.name, chat.picture, $element)
-        
-        chatObj.$element.on("click", () => chatObj.init())
-      
-        // Push the username to the array of all DMs
-        this.chats[chat.username] = chatObj
-      })
-      
-    });
+
+          // encodes html
+          $element.find(".lastMsg").text(((chat.last_message) ? chat.last_message : ""))
+
+          $("#profiles-list").append($element)
+
+          let chatObj = new Chat(chat.username, chat.name, chat.picture, $element)
+
+          chatObj.$element.on("click", () => chatObj.init())
+
+          // Push the username to the array of all DMs
+          this.chats[chat.username] = chatObj
+        })
+
+      });
   },
 
   newChat() {
@@ -106,46 +108,46 @@ let my = {
           process: "newChat",
           data: username
         })
-        .then(response => {
-          if (response = verifyResultJSON(response)) {
-            if (!response.ok) {
-              throw new Error(response.statusText)
+          .then(response => {
+            if (response = verifyResultJSON(response)) {
+              if (!response.ok) {
+                throw new Error(response.statusText)
+              }
+              response.username = username
+              return response
             }
-            response.username = username
-            return response
-          }
-        })
-        .catch(error => {
-          Swal.showValidationMessage(
-            error
-          )
-        })
+          })
+          .catch(error => {
+            Swal.showValidationMessage(
+              error
+            )
+          })
       },
       backdrop: true,
       allowOutsideClick: () => !Swal.isLoading()
     })
-    .then((result) => {
-      if (!result.isConfirmed) {
-        console.log("not confirmed")
-        return;
-      }
-      if (typeof result.value != "object") {
-        console.log("not an object")
-        return;
-      }
-      let receiver = result.value.receiver.username
-      if (result.value.alreadyExists) {
-        Toast.fire({
-          icon: "info",
-          title: "You already have a conversation with @" + receiver
-        })
-        my.chats[receiver].init()
-        console.log("already exists")
-        return;
-      }
-      // create the new chat
-      let $element = $(document.createElement("li"));
-      $element.append(`
+      .then((result) => {
+        if (!result.isConfirmed) {
+          console.log("not confirmed")
+          return;
+        }
+        if (typeof result.value != "object") {
+          console.log("not an object")
+          return;
+        }
+        let receiver = result.value.receiver.username
+        if (result.value.alreadyExists) {
+          Toast.fire({
+            icon: "info",
+            title: "You already have a conversation with @" + receiver
+          })
+          my.chats[receiver].init()
+          console.log("already exists")
+          return;
+        }
+        // create the new chat
+        let $element = $(document.createElement("li"));
+        $element.append(`
         <div class="wrapper">
           <img src="${result.value.receiver.picture}">
           <span>
@@ -155,21 +157,21 @@ let my = {
           </span>
         </div>
       `)
-      
-      $("#profiles-list").prepend($element)
-      
-      let chatObj = new Chat(receiver, result.value.receiver.name, result.value.receiver.picture, $element)
-      
-      chatObj.$element.on("click", () => chatObj.init())
-    
-      // Push the username to the array of all DMs
-      this.chats[receiver] = chatObj
 
-      chatObj.init()
-    })
+        $("#profiles-list").prepend($element)
+
+        let chatObj = new Chat(receiver, result.value.receiver.name, result.value.receiver.picture, $element)
+
+        chatObj.$element.on("click", () => chatObj.init())
+
+        // Push the username to the array of all DMs
+        this.chats[receiver] = chatObj
+
+        chatObj.init()
+      })
   },
 
-  profile : {
+  profile: {
     modal() {
       Swal.fire({
         title: "Edit Profile"
@@ -177,19 +179,19 @@ let my = {
     }
   },
 
-  settings : {
+  settings: {
     modal() {
       Swal.fire({
         title: "Settings"
       })
     },
 
-    preferredColorScheme : "systemPreference" // options 'dark' 'light' 'systemPreference'
+    preferredColorScheme: "systemPreference" // options 'dark' 'light' 'systemPreference'
   }
 }
 
 class Chat {
-  constructor (username, name, picture, $element) {
+  constructor(username, name, picture, $element) {
     this.username = username
     this.name = name
     this.picture = picture
@@ -235,7 +237,7 @@ class Chat {
         <span>${spanContent}</span>
       </div>
     `
-    
+
     if (append) {
       $(".messages").append(msg)
       return;
@@ -306,9 +308,9 @@ class Chat {
 
     showMsgBlock()
 
-    setTimeout (function (){
+    setTimeout(function () {
       $(".recipientBlock").show(400)
-      $(".messagesContainer").show(500, function(){
+      $(".messagesContainer").show(500, function () {
         $(".messageWrapper span img, .messageWrapper span video").css("max-height", $(".messagesContainer").height())
       })
       $(".messageBar").show(400)
@@ -361,8 +363,10 @@ class Chat {
         $(".messages").html(messageElements)
         $(".messageWrapper span img, .messageWrapper span video").css("max-height", $(".messagesContainer").height())
 
+        my.openChat = this;
+
       }
-    )
+      )
   }
   message() {
     // won't send a message if another one is being sent
@@ -386,20 +390,20 @@ class Chat {
     $msgBox.val("")
     fixMessageBoxHeight($msgBox)
 
-    
+
     let $newMsg = $(document.createElement("div"))
     $newMsg[0].className = "messageWrapper myMessage"
     $newMsg.css("opacity", .5)
-    
+
     $newMsg.append(`
       <img src="${my.picture}">
       <span></span>
     `)
-    
+
     // ensures shift enter whitespace is html complient
     $newMsg.find("span").text(message)
     $newMsg.find("span").html($newMsg.find("span").text().replaceAll("\n", "<br>"))
-    
+
     // appends the new message to the .messages div
     $(".messages").append($newMsg)
 
@@ -414,31 +418,84 @@ class Chat {
 
     // sets isSending to true before sending the message
     this.isSending = true
-    $.post("processes", {
-      process: "sendMessage",
-      data: JSON.stringify([this.username, message])
-    })
-    .then((result) => {
-      // resets the isSending to false
-      this.isSending = false
+    // if the socket is open then we send through the socket but if it's closed then the message gets sent post like normal
+    if (my.socket.socket.readyState == my.socket.socket.OPEN) {
+      my.socket.send("M", [this.username, {
+        type: false,
+        date: new Date().toLocaleTimeString(),
+        content: message,
+      }], (result) => {
+          // resets the isSending to false
+          this.isSending = false
 
-      // set last message
-      $lastMsgSpan.removeClass("mute italic").html("&nbsp;")
-
-      // verify the result is indeed json and sets the result to the json value
-      if (result = verifyResultJSON(result)) {
-        if (result.ok) {
           // set last message
-          $lastMsgSpan.text(message)
-          // if the message sent it changes the transparency of the message element in the .messages div
-          $newMsg.css("opacity", 1)
-        } else {
-          // if the message failed to send it fires an error toast
-          Toast.fire({ icon: "error", text: result.statusText })
+          $lastMsgSpan.removeClass("mute italic").html("&nbsp;")
+
+          if (result.ok) {
+            // set last message
+            $lastMsgSpan.text(message)
+            // if the message sent it changes the transparency of the message element in the .messages div
+            $newMsg.css("opacity", 1)
+          } else {
+            // if the message failed to send it fires an error toast
+            Toast.fire({ icon: "error", title: result.statusText })
+          }
+          this.msgId++
+        })
+    } else {
+      $.post("processes", {
+        process: "sendMessage",
+        data: JSON.stringify([this.username, message])
+      })
+      .then((result) => {
+        // resets the isSending to false
+        this.isSending = false
+  
+        // set last message
+        $lastMsgSpan.removeClass("mute italic").html("&nbsp;")
+  
+        // verify the result is indeed json and sets the result to the json value
+        if (result = verifyResultJSON(result)) {
+          if (result.ok) {
+            // set last message
+            $lastMsgSpan.text(message)
+            // if the message sent it changes the transparency of the message element in the .messages div
+            $newMsg.css("opacity", 1)
+          } else {
+            // if the message failed to send it fires an error toast
+            Toast.fire({ icon: "error", text: result.statusText })
+          }
+          this.msgId++
         }
-        this.msgId++
-      }
-    })
+      })
+    }
+  }
+  receive(message) {
+    let $newMsg;
+    let $lastMsgSpan = this.$element.find(".lastMsg")
+    // if the message doesn't have a subsequent type variable it is NOT media
+    if (!message.type) {
+      // generate the html text message
+      $newMsg = $(`
+        <div class="messageWrapper" title="${message.date}">
+          <img src="${this.picture}">
+          <span>${message.content.replaceAll("\n", "<br>")}</span>
+        </div>
+      `);
+      // set last message
+      $lastMsgSpan.text(message.content);
+    } else {
+      // this is used for messages that ARE media
+      $newMsg = $(this.createMediaMsg(message.type, message.content, message.date, message.original, false))
+      // set last message
+      $lastMsgSpan.text(message.original)
+    }
+
+    if (my.openChat === undefined || my.openChat.username != this.username) return;
+
+    // render the messages and remove the loader from .messages
+    $(".messages").append($newMsg);
+    $(".messageWrapper span img, .messageWrapper span video").css("max-height", $(".messagesContainer").height())
   }
 }
 
@@ -454,7 +511,7 @@ function upload(chat) {
   function modal() {
     Swal.fire({
       title: 'Upload',
-  
+
       html: `
       <div class="uploadField" id='uploaderDiv' onclick="$('#fileInput').click();">
         <p id="uploadBoxP">Click here or drag and drop</p>
@@ -465,12 +522,12 @@ function upload(chat) {
       `,
 
       didOpen: () => {
-        $("#fileInput").on("change", function(){
+        $("#fileInput").on("change", function () {
           let file = this.files[0]
           $("#uploadBoxP").html(((file) ? `${file.name}<br><span style="color:orange">${byteConverter(file.size)}</span>` : "Click here or drag and drop"))
         })
       },
-  
+
       showCancelButton: true,
       reverseButtons: true,
       allowEscapeKey: () => !Swal.isLoading(),
@@ -486,7 +543,7 @@ function upload(chat) {
         }
 
         send(file)
-  
+
         // prevents popup from closing
         return false
       },
@@ -512,12 +569,12 @@ function upload(chat) {
     $(Swal.getHtmlContainer()).html(newUploadDiv)
     $innerBar = $("#innerBar")
     $status = $("#status")
-  
+
     var formdata = new FormData()
     formdata.append("file", file)
     formdata.append("data", chat.username)
     formdata.append("process", "sendFile")
-  
+
     var ajax = new XMLHttpRequest()
     ajax.upload.addEventListener("progress", progressHandler, false)
     ajax.addEventListener("load", completeHandler, false)
@@ -535,12 +592,12 @@ function upload(chat) {
   }
   function progressHandler(event) {
     $("#bytes").html(`Uploaded ${byteConverter(event.loaded)}/${byteConverter(event.total)}`)
-  
+
     var percent = Math.round((event.loaded / event.total) * 100)
-  
+
     $innerBar.animate({ "width": percent + "%" }, .15)
     $innerBar.html(percent + "%")
-  
+
     if (percent == 100) {
       $status.css({ fontWeight: "bold", textDecoration: "underline" })
       $status.html("Finalizing, please wait just a little longer...")
@@ -551,9 +608,9 @@ function upload(chat) {
   function completeHandler(event) {
     let result = event.target.responseText
     console.log(result)
-  
+
     result = verifyResultJSON(result)
-  
+
     if (!result) {
       Swal.fire(
         "Error",
@@ -637,7 +694,7 @@ function verifyResultJSON(result) {
         timer: 5000,
         timerProgressBar: true
       }).then(function () {
-        //window.location.reload()
+        // window.location.reload()
       })
     }
     return false
@@ -645,8 +702,97 @@ function verifyResultJSON(result) {
   return parsed
 }
 
+function receiveMessage(msg) {
+  console.log("MSG: ", msg);
+
+  const parsed = verifyResultJSON(msg.data);
+
+  if (parsed.sendId) {
+    if (typeof my.socket.waitingActions[parsed.sendId] == "function") {
+      my.socket.waitingActions[parsed.sendId](parsed);
+      delete my.socket.waitingActions[parsed.sendId];
+    }
+  }
+
+  if (parsed.sender) {
+    my.chats[parsed.sender].receive(parsed.message)
+  }
+}
+
+class MyWebSocket {
+  constructor(onopen = false) {
+    this.connectionAttempts = 0;
+    this.sendId = 0;
+    this.waitingActions = {};
+
+    if (typeof onopen == "function") this.onopen = onopen;
+  }
+
+  init() {
+    const host = "wss://earthcow.xyz/_ws_/";
+    try {
+      this.socket = new WebSocket(host);
+      console.log('WebSocket - status ' + this.socket.readyState);
+      this.socket.onopen = (msg) => {
+        this.connectionAttempts = 0;
+        Swal.close();
+        if (this.onopen) this.onopen();
+        console.log("Welcome - status " + this.readyState);
+      };
+      this.socket.onmessage = receiveMessage;
+      this.socket.onclose = (msg) => {
+        console.log("Disconnected from websocket will try to reconnect");
+        this.reconnect();
+      };
+    }
+    catch (ex) {
+      console.log(ex);
+    }
+  }
+
+  send(instruction, content, callback) {
+    try {
+      if (callback) this.waitingActions[this.sendId] = callback;
+      this.socket.send(JSON.stringify({ instruction: instruction, content: content, sendId: this.sendId++ }));
+    } catch (ex) {
+      console.log(ex);
+    }
+  }
+
+  reconnect() {
+    if (this.socket.readyState != this.socket.CLOSED) return;
+    if (this.connectionAttempts++ > 1) {
+      Toast.fire({ title: "Disconnected! Attempting to reconnect...", icon: "info", didOpen: () => Swal.showLoading(), timer: false });
+      setTimeout(() => {
+        console.log("Attempting to reconnect");
+        this.init()
+      }, 5000)
+      return;
+    }
+    console.log("Attempting to reconnect");
+    this.init()
+  }
+
+}
+
 $(function () {
   $(".main").css("transform", "scale(1)")
+
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === 'visible') {
+      my.socket.reconnect();
+    }
+  });
+
+  $.post("processes", { process: "getLogin", data: 869 }, function (result) {
+    const parsed = verifyResultJSON(result);
+    my.socket = new MyWebSocket(function () {
+      my.socket.send("L", parsed)
+    });
+    my.socket.init();
+
+  })
+
   my.getChats();
 })
 
@@ -656,12 +802,12 @@ window.onresize = function (event) {
 
 function actallyHideMsgBlock() {
   $(".profiles-block").width("calc(250px + 50vw)")
-  $(".messages-block").css({"min-width":"unset","width":0,"opacity":0})
+  $(".messages-block").css({ "min-width": "unset", "width": 0, "opacity": 0 })
 }
 
 function showMsgBlock() {
   $(".profiles-block").width(250)
-  $(".messages-block").css({"width":"50vw","opacity":1})
+  $(".messages-block").css({ "width": "50vw", "opacity": 1 })
   // need to add min width somewhere
 }
 
@@ -684,10 +830,10 @@ function previewMedia(type, src) {
 
 function adminRequest(request = "clear", data = 896) {
   $.post("processes", {
-    process:"administrator",
-    data:JSON.stringify({request: request, data: data})
+    process: "administrator",
+    data: JSON.stringify({ request: request, data: data })
   })
-  .then(function(result){
-    console.log(result)
-  })
+    .then(function (result) {
+      console.log(result)
+    })
 }
