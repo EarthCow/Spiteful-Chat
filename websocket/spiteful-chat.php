@@ -6,6 +6,8 @@ require_once("/var/www/private/spiteful-chat/database.php");
 
 class SpiteServer extends WebSocketServer {
 
+  private $nextPing;
+
   // $maxBufferSize is 1MB
   function __construct($addr, $port, $bufferLength=1048576) {
     parent::__construct($addr, $port, $bufferLength);
@@ -172,6 +174,9 @@ class SpiteServer extends WebSocketServer {
         return;
 
         break;
+      case "P":
+        $this->respond($user, "Pong!", true);
+        break;
       default:
         $response["statusText"] = "Invalid instruction recieved!";
         $this->send($user, json_encode($response));
@@ -195,7 +200,7 @@ class SpiteServer extends WebSocketServer {
   }
 
   protected function tick() {
-    
+
   }
 }
 

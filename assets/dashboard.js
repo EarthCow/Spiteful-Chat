@@ -751,6 +751,7 @@ class MyWebSocket {
     this.connectionAttempts = 0;
     this.sendId = 0;
     this.waitingActions = {};
+    this.recurringPing;
 
     if (typeof onopen == "function") this.onopen = onopen;
   }
@@ -763,9 +764,11 @@ class MyWebSocket {
         this.connectionAttempts = 0;
         if (this.onopen) this.onopen();
         console.log("WEBSOCKET CONNECTED");
+        this.recurringPing = setInterval(()=>{this.send("P", "Ping!")}, 4000);
       };
       this.socket.onmessage = receiveMessage;
       this.socket.onclose = (msg) => {
+        clearInterval(this.recurringPing);
         console.warn("WEBSOCKET DISCONNECTED");
         this.reconnect();
       };
