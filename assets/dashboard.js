@@ -418,7 +418,7 @@ class Chat {
 
     // sets isSending to true before sending the message
     this.isSending = true
-    // if the socket is open then we send through the socket but if it's closed then the message gets sent post like normal
+    // if the socket is open then we send through the socket but if it's not then the message gets sent post like normal
     if (my.socket.socket.readyState == my.socket.socket.OPEN) {
       my.socket.send("M", [this.username, {
         type: false,
@@ -486,7 +486,7 @@ class Chat {
       $lastMsgSpan.text(message.content);
     } else {
       // this is used for messages that ARE media
-      $newMsg = $(this.createMediaMsg(message.type, message.content, message.date, message.original, false))
+      $newMsg = $(this.createMediaMsg(message.type, message.src, message.date, message.original, false))
       // set last message
       $lastMsgSpan.text(message.original)
     }
@@ -632,6 +632,8 @@ function upload(chat) {
       icon: "success"
     })
 
+    my.socket.send("M", [chat.username, result])
+
     chat.createMediaMsg(result.type, result.src, result.date, result.original, true, true)
     chat.$element.find(".lastMsg").text(result.lastMsg)
     // move dm to the top of the list
@@ -751,8 +753,9 @@ class MyWebSocket {
   }
 
   send(instruction, content, callback) {
+    if (this.socket.readyState != this.socket.OPEN) return false;
     try {
-      if (callback) this.waitingActions[this.sendId] = callback;
+      if (typeof callback == "function") this.waitingActions[this.sendId] = callback;
       this.socket.send(JSON.stringify({ instruction: instruction, content: content, sendId: this.sendId++ }));
     } catch (ex) {
       console.log(ex);

@@ -85,43 +85,46 @@ class SpiteServer extends WebSocketServer {
           $this->respond($user, "Invalid operation");
           return;
         }
+
+        if (!$message["type"]) {
         
-        $sql = "SELECT * FROM `profiles` WHERE `username`=?";
-        $statement = $GLOBALS["connection"] -> prepare($sql);
-        $statement -> bind_param("s", $receiverUsername);
-        $statement -> execute();
-        $result = $statement -> get_result();
+          $sql = "SELECT * FROM `profiles` WHERE `username`=?";
+          $statement = $GLOBALS["connection"] -> prepare($sql);
+          $statement -> bind_param("s", $receiverUsername);
+          $statement -> execute();
+          $result = $statement -> get_result();
 
-        if ($result -> num_rows == 0) {
-          $this->respond($user, "Invalid operation");
-          return;
+          if ($result -> num_rows == 0) {
+            $this->respond($user, "Invalid operation");
+            return;
+          }
+
+          $receiverRow = $result -> fetch_assoc();
+          $receiverId = $receiverRow["user_id"];
+
+          $sql = "SELECT chat_id FROM chats WHERE (sender = $user->sessId AND receiver = $receiverId) OR (sender = $receiverId AND receiver = $user->sessId)";
+          $result = $GLOBALS["connection"] -> query($sql);
+
+          if ($result -> num_rows != 1) {
+            $this->respond($user, "Invalid operation");
+            return;
+          }
+
+          $row = $result ->fetch_assoc();
+          $chatId = $row["chat_id"];
+
+          $sql = "INSERT INTO `messages` (chat_id, sender, content) VALUES ($chatId, $user->sessId, ?)";
+          $statement = $GLOBALS["connection"] -> prepare($sql);
+          $statement -> bind_param("s", $message["content"]);
+          $statement -> execute();
+
+          $insertedId = $statement -> get_result();
+
+          $sql = "UPDATE chats SET last_message = ? WHERE chat_id = $chatId";
+          $statement = $GLOBALS["connection"] -> prepare($sql);
+          $statement -> bind_param("s", $message["content"]);
+          $statement -> execute();
         }
-
-        $receiverRow = $result -> fetch_assoc();
-        $receiverId = $receiverRow["user_id"];
-
-        $sql = "SELECT chat_id FROM chats WHERE (sender = $user->sessId AND receiver = $receiverId) OR (sender = $receiverId AND receiver = $user->sessId)";
-        $result = $GLOBALS["connection"] -> query($sql);
-
-        if ($result -> num_rows != 1) {
-          $this->respond($user, "Invalid operation");
-          return;
-        }
-
-        $row = $result ->fetch_assoc();
-        $chatId = $row["chat_id"];
-
-        $sql = "INSERT INTO `messages` (chat_id, sender, content) VALUES ($chatId, $user->sessId, ?)";
-        $statement = $GLOBALS["connection"] -> prepare($sql);
-        $statement -> bind_param("s", $message["content"]);
-        $statement -> execute();
-
-        $insertedId = $statement -> get_result();
-
-        $sql = "UPDATE chats SET last_message = ? WHERE chat_id = $chatId";
-        $statement = $GLOBALS["connection"] -> prepare($sql);
-        $statement -> bind_param("s", $message["content"]);
-        $statement -> execute();
         
         $lm = date("m/d/Y h:i:s");
 
@@ -143,7 +146,7 @@ class SpiteServer extends WebSocketServer {
         
         $this->respond($user, "Message was sent successfully!", true, [
           "lm" => $lm,
-          "id" => $insertedId,
+          "id" => isset($insertedId) ? $insertedId : 0,
           "sendId" => $parsedMsg["sendId"]
         ]);
         return;
