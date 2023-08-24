@@ -33,7 +33,10 @@ class MyUser extends WebSocketUser {
 class SpiteUser extends WebSocketUser {
   public $sessId;
   public $sessToken;
+
   public $username;
+  public $name;
+  public $picture;
 
   function __construct($id, $socket) {
     parent::__construct($id, $socket);

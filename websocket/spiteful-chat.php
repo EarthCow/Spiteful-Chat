@@ -68,7 +68,10 @@ class SpiteServer extends WebSocketServer {
   
           $user->sessId = $row["user_id"];
           $user->sessToken = $row["token"];
+
           $user->username = $row["username"];
+          $user->name = $row["name"];
+          $user->picture = $row["picture"];
 
           $this->respond($user, "User logged in!", true);
         }
@@ -88,14 +91,14 @@ class SpiteServer extends WebSocketServer {
 
         if (!$message["type"]) {
         
-          $sql = "SELECT * FROM `profiles` WHERE `username`=?";
+          $sql = "SELECT `user_id`, `name`, `picture` FROM `profiles` WHERE `username`=?";
           $statement = $GLOBALS["connection"] -> prepare($sql);
           $statement -> bind_param("s", $receiverUsername);
           $statement -> execute();
           $result = $statement -> get_result();
 
           if ($result -> num_rows == 0) {
-            $this->respond($user, "Invalid operation");
+            $this->respond($user, "Invalid Operation");
             return;
           }
 
@@ -106,12 +109,24 @@ class SpiteServer extends WebSocketServer {
           $result = $GLOBALS["connection"] -> query($sql);
 
           if ($result -> num_rows != 1) {
-            $this->respond($user, "Invalid operation");
-            return;
-          }
+            // If no chat exists yet
+            if (strcasecmp($receiverUsername, $user->username) == 0) {
+              $response["statusText"] = "Fucking dumbass no you cannot message yourself lonely ass";
+              die(json_encode($response));
+            }
 
-          $row = $result ->fetch_assoc();
-          $chatId = $row["chat_id"];
+            $sql = "INSERT INTO `chats` (`sender`, `receiver`) VALUES ($user->sessId, $receiverId);";
+            $result = $GLOBALS["connection"] -> query($sql);
+
+            if (!$result) {
+              $response = ["statusText" => "Failed to create a new conversation"];
+              die(json_encode($response));
+            }
+            $chatId = $GLOBALS["connection"] -> insert_id;
+          } else {
+            $row = $result ->fetch_assoc();
+            $chatId = $row["chat_id"];
+          }
 
           $sql = "INSERT INTO `messages` (chat_id, sender, content) VALUES ($chatId, $user->sessId, ?)";
           $statement = $GLOBALS["connection"] -> prepare($sql);
@@ -122,7 +137,8 @@ class SpiteServer extends WebSocketServer {
 
           $sql = "UPDATE chats SET last_message = ? WHERE chat_id = $chatId";
           $statement = $GLOBALS["connection"] -> prepare($sql);
-          $statement -> bind_param("s", $message["content"]);
+          $truncated = substr($message["content"], 0, 255);
+          $statement -> bind_param("s", $truncated);
           $statement -> execute();
         }
         
@@ -140,7 +156,11 @@ class SpiteServer extends WebSocketServer {
         if ($receiver) {
           $this->send($receiver, json_encode([
             "sender" => $user->username,
-            "message" => $message
+            "message" => $message,
+            "info" => [
+              "name" => $user->name,
+              "picture" => $user->picture
+            ]
           ]));
         }
         

@@ -491,7 +491,7 @@ class Chat {
       $lastMsgSpan.text(message.original)
     }
 
-    if (my.openChat === undefined || my.openChat.username != this.username) return;
+    if (my.openChat === null || my.openChat.username != this.username) return;
 
     // render the messages and remove the loader from .messages
     $(".messages").append($newMsg);
@@ -717,7 +717,32 @@ function receiveMessage(msg) {
   }
 
   if (parsed.sender) {
-    my.chats[parsed.sender].receive(parsed.message)
+    if (my.chats[parsed.sender])
+      my.chats[parsed.sender].receive(parsed.message);
+    else {
+        // create the new chat
+        let $element = $(document.createElement("li"));
+        $element.append(`
+        <div class="wrapper">
+          <img src="${parsed.info.picture}">
+          <span>
+            <strong>${parsed.sender}</strong>
+            <br>
+            <span class="lastMsg"></span>
+          </span>
+        </div>
+      `)
+
+        $("#profiles-list").prepend($element)
+
+        let chatObj = new Chat(parsed.sender, parsed.info.name, parsed.info.picture, $element)
+
+        chatObj.$element.on("click", () => chatObj.init())
+
+        // Push the username to the array of all DMs
+        my.chats[parsed.sender] = chatObj
+        my.chats[parsed.sender].receive(parsed.message);
+    }
   }
 }
 
@@ -734,16 +759,14 @@ class MyWebSocket {
     const host = "wss://earthcow.xyz/_ws_/";
     try {
       this.socket = new WebSocket(host);
-      console.log('WebSocket - status ' + this.socket.readyState);
       this.socket.onopen = (msg) => {
         this.connectionAttempts = 0;
-        Swal.close();
         if (this.onopen) this.onopen();
-        console.log("Welcome - status " + this.readyState);
+        console.log("WEBSOCKET CONNECTED");
       };
       this.socket.onmessage = receiveMessage;
       this.socket.onclose = (msg) => {
-        console.log("Disconnected from websocket will try to reconnect");
+        console.warn("WEBSOCKET DISCONNECTED");
         this.reconnect();
       };
     }
@@ -764,8 +787,9 @@ class MyWebSocket {
 
   reconnect() {
     if (this.socket.readyState != this.socket.CLOSED) return;
+    if (document.visibilityState !== 'visible') return;
     if (this.connectionAttempts++ > 1) {
-      Toast.fire({ title: "Disconnected! Attempting to reconnect...", icon: "info", didOpen: () => Swal.showLoading(), timer: false });
+      Toast.fire({ title: "Disconnected! Attempting to reconnect...", icon: "info", didOpen: () => Swal.showLoading() });
       setTimeout(() => {
         console.log("Attempting to reconnect");
         this.init()

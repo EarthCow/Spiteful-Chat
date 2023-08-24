@@ -165,12 +165,24 @@ if (!isset($_POST['process']) || !isset($_POST['data'])) {
               $result = $connection -> query($sql);
 
               if ($result -> num_rows != 1) {
-                $response["statusText"] = "Invalid Operation";
-                die(json_encode($response));
+                // If no chat exists yet
+                if (strcasecmp($receiver, $row["username"]) == 0) {
+                  $response["statusText"] = "Fucking dumbass no you cannot message yourself lonely ass";
+                  die(json_encode($response));
+                }
+  
+                $sql = "INSERT INTO `chats` (`sender`, `receiver`) VALUES ($userId, $receiverId);";
+                $result = $connection -> query($sql);
+  
+                if (!$result) {
+                  $response = ["statusText" => "Failed to create a new conversation"];
+                  die(json_encode($response));
+                }
+                $chatId = $connection -> insert_id;
+              } else {
+                $row = $result ->fetch_assoc();
+                $chatId = $row["chat_id"];
               }
-
-              $row = $result ->fetch_assoc();
-              $chatId = $row["chat_id"];
 
               $sql = "INSERT INTO `messages` (chat_id, sender, content) VALUES ($chatId, $userId, ?)";
               $statement = $connection -> prepare($sql);
@@ -228,12 +240,24 @@ if (!isset($_POST['process']) || !isset($_POST['data'])) {
               $result = $connection -> query($sql);
 
               if ($result -> num_rows != 1) {
-                $response["statusText"] = "Invalid Operation";
-                die(json_encode($response));
+                // If no chat exists yet
+                if (strcasecmp($receiver, $row["username"]) == 0) {
+                  $response["statusText"] = "Fucking dumbass no you cannot message yourself lonely ass";
+                  die(json_encode($response));
+                }
+  
+                $sql = "INSERT INTO `chats` (`sender`, `receiver`) VALUES ($userId, $receiverId);";
+                $result = $connection -> query($sql);
+  
+                if (!$result) {
+                  $response = ["statusText" => "Failed to create a new conversation"];
+                  die(json_encode($response));
+                }
+                $chatId = $connection -> insert_id;
+              } else {
+                $row = $result ->fetch_assoc();
+                $chatId = $row["chat_id"];
               }
-
-              $row = $result -> fetch_assoc();
-              $chatId = $row["chat_id"];
 
               $typeName = explode("/", $_FILES['file']['type'])[0];
 
@@ -308,26 +332,23 @@ if (!isset($_POST['process']) || !isset($_POST['data'])) {
               $statement -> bind_param("s", $data);
               $statement -> execute() or die();
               $result = $statement -> get_result();
-
+  
               if ($result -> num_rows == 0) {
                 $response["statusText"] = "Couldn't find who you're looking for";
                 die(json_encode($response));
               }
-
+  
               $receiverRow = $result -> fetch_assoc();
               $receiverId = $receiverRow["user_id"];
-
+  
               $sql = "SELECT `chat_id` FROM `chats` WHERE (sender = $userId AND receiver = $receiverId) OR (sender = $receiverId AND receiver = $userId)";
               $result = $connection -> query($sql);
-
+  
               if ($result -> num_rows != 0) {
                 $response = ["ok" => true, "receiver" => ["username" => $receiverRow["username"]], "alreadyExists" => true];
                 die(json_encode($response));
               }
-
-              $sql = "INSERT INTO `chats` (`sender`, `receiver`) VALUES ($userId, $receiverId);";
-              $result = $connection -> query($sql);
-
+  
               if (!$result) {
                 $response = ["statusText" => "Failed to created a new conversation"];
                 die(json_encode($response));
@@ -335,7 +356,7 @@ if (!isset($_POST['process']) || !isset($_POST['data'])) {
                 $response = ["ok" => true, "receiver" => $receiverRow];
                 die(json_encode($response));
               }
-
+  
               break;
             
             case "administrator":
