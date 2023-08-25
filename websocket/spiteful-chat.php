@@ -6,8 +6,6 @@ require_once("/var/www/private/spiteful-chat/database.php");
 
 class SpiteServer extends WebSocketServer {
 
-  private $nextPing;
-
   // $maxBufferSize is 1MB
   function __construct($addr, $port, $bufferLength=1048576) {
     parent::__construct($addr, $port, $bufferLength);
@@ -75,7 +73,38 @@ class SpiteServer extends WebSocketServer {
           $user->name = $row["name"];
           $user->picture = $row["picture"];
 
-          $this->respond($user, "User logged in!", true);
+          // Will eventually need to define a friends system likely another relational table :)
+          // For now I will get the current chats and use that to determine the active friends
+
+          // When status is added as a table column "appear offline" would negate this entire logic
+          $sql = "
+            SELECT profiles.username
+            FROM `chats`
+            JOIN `profiles`
+            ON IF(chats.sender = $user->sessId, chats.receiver = profiles.user_id, chats.sender = profiles.user_id)
+            WHERE chats.sender = $user->sessId OR chats.receiver = $user->sessId
+            ORDER BY `modified` DESC;
+          ";
+          $result = $GLOBALS["connection"] -> query($sql);
+
+          $row = $result->fetch_all(MYSQLI_ASSOC);
+
+          foreach ($row as $chat) {
+            foreach ($this->users as $currentUser) {
+              if ($currentUser->username === $chat["username"]) {
+                $this->send($currentUser, json_encode([
+                  "username" => $user->username,
+                  "status" => "online" // This will eventually reflect an option within the profiles table for now "online" is fine
+                ]));
+                break;
+              }
+            }
+            unset($currentUser);
+          }
+
+          $this->respond($user, "User logged in!", true, [
+            "sendId" => $parsedMsg["sendId"]
+          ]);
         }
         break;
       case "M":
@@ -91,8 +120,11 @@ class SpiteServer extends WebSocketServer {
           return;
         }
 
-        $message["content"] = str_replace("<br>", "\n", $message["content"]);
-        $message["content"] = htmlspecialchars($message["content"]);
+        // Media may not contain key content
+        if (isset($message["content"])) {
+          $message["content"] = str_replace("<br>", "\n", $message["content"]);
+          $message["content"] = htmlspecialchars($message["content"]);
+        }
 
         if (!$message["type"]) {
         
@@ -179,6 +211,37 @@ class SpiteServer extends WebSocketServer {
         return;
 
         break;
+      case "C":
+        $sql = "
+        SELECT chats.chat_id, chats.last_message, chats.modified, profiles.username, profiles.name, profiles.picture
+        FROM `chats`
+        JOIN `profiles`
+        ON IF(chats.sender = $user->sessId, chats.receiver = profiles.user_id, chats.sender = profiles.user_id)
+        WHERE chats.sender = $user->sessId OR chats.receiver = $user->sessId
+        ORDER BY `modified` DESC;
+        ";
+        $result = $GLOBALS["connection"] -> query($sql);
+
+        $row = $result->fetch_all(MYSQLI_ASSOC);
+
+        $index = 0;
+        foreach ($row as $chat) {
+          foreach ($this->users as $currentUser) {
+            if ($currentUser->username === $chat["username"]) {
+              $row[$index++]["status"] = "online";
+              break;
+            }
+          }
+          unset($currentUser);
+        }
+
+        // if there are no rows (chats) then send an empty array
+        $this->respond($user, "", true, [
+          "chats" => $row ?? [],
+          "sendId" => $parsedMsg["sendId"]
+        ]);
+
+        break;
       case "P":
         $this->respond($user, "Pong!", true);
         break;
@@ -199,6 +262,31 @@ class SpiteServer extends WebSocketServer {
   
   protected function closed ($user) {
     $this->stdout("User Disconnected - Count: ".count($this->users));
+    if ($user->username == null) return;
+    $sql = "
+      SELECT profiles.username
+      FROM `chats`
+      JOIN `profiles`
+      ON IF(chats.sender = $user->sessId, chats.receiver = profiles.user_id, chats.sender = profiles.user_id)
+      WHERE chats.sender = $user->sessId OR chats.receiver = $user->sessId
+      ORDER BY `modified` DESC;
+    ";
+    $result = $GLOBALS["connection"] -> query($sql);
+
+    $row = $result->fetch_all(MYSQLI_ASSOC);
+
+    foreach ($row as $chat) {
+      foreach ($this->users as $currentUser) {
+        if ($currentUser->username === $chat["username"]) {
+          $this->send($currentUser, json_encode([
+            "username" => $user->username,
+            "status" => "" // Blank will remove status and be "offline"
+          ]));
+          break;
+        }
+      }
+      unset($currentUser);
+    }
     // Do nothing: This is where cleanup would go, in case the user had any sort of
     // open files or other objects associated with them.  This runs after the socket 
     // has been closed, so there is no need to clean up the socket itself here.

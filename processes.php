@@ -57,7 +57,7 @@ if (!isset($_POST['process']) || !isset($_POST['data'])) {
               $row = $result->fetch_all(MYSQLI_ASSOC);
 
               // if there are no rows (chats) then send an empty array
-              $response = ["ok" => true, "chats" => (($row === null) ? [] : $row)];
+              $response = ["ok" => true, "chats" => $row ?? []];
               die(json_encode($response));
 
               break;

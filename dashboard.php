@@ -81,7 +81,11 @@ $connection->query($sql) or die("An error occurred CULA1"); // Code update last 
         </div>
         <div class="my-profile-section">
           <div class="my-profile-block" onclick="my.profile.modal()">
-            <img id="myPicture" src="<?php echo $row["picture"]; ?>">
+            <!-- Later on there will be a row value for dnd, online, or appear offline -->
+            <div class="profile-picture-wrapper">
+              <img id="myPicture" class="online" src="<?php echo $row["picture"]; ?>">
+              <div class="status-circle online"></div>
+            </div>
             <div>
               <span id="myName"><?php echo $row["name"]; ?></span>
               <br>

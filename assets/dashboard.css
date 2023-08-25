@@ -317,6 +317,29 @@ button:hover,
   font-size: .8rem;
 }
 
+/* Profile picture badges - IMG tags do not support ::after unfortunately */
+
+.profile-picture-wrapper {
+  width: 2.6rem;
+  height: 2.6rem;
+  position: relative;
+}
+
+.status-circle {
+  width: 0.94rem;
+  height: 0.94rem;
+  border-radius: 50%;
+  background-color: grey;
+  border: 0.14rem solid white;
+  bottom: 0;
+  right: 0;
+  position: absolute;
+}
+
+.status-circle.online {
+  background-color: #00cc00;
+}
+
 /* Messages Container & Wrapper */
 
 .messagesContainer {

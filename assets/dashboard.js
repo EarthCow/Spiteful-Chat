@@ -8,38 +8,34 @@ let my = {
   socket: null,
 
   getChats() {
-    $.post("processes", {
-      process: "getChats",
-      data: "896"
-    })
-      .then(result => {
-        result = verifyResultJSON(result)
-        if (result === false) {
-          return;
-        }
+    if (this.socket.available()) {
+      this.socket.send("C", "", parsed => {
 
-        if (!result.ok) {
+        if (!parsed.ok) {
           Toast.fire({
             icon: "error",
             title: "Error",
-            text: result.statusText
+            text: parsed.statusText
           })
           return;
         }
 
-        if (!result.chats) {
+        if (!parsed.chats) {
           return;
         }
 
         // Hide the loading animation
         $(".profiles-block .loader").hide()
 
-        result.chats.forEach(chat => {
+        parsed.chats.forEach(chat => {
 
           let $element = $(document.createElement("li"));
           $element.append(`
           <div class="wrapper">
-            <img src="${chat.picture}">
+            <div class="profile-picture-wrapper">
+              <img src="${chat.picture}">
+              <div class="status-circle ${chat.status ?? ""}"></div>
+            </div>
             <span>
               <strong>${chat.username}</strong>
               <br>
@@ -62,6 +58,64 @@ let my = {
         })
 
       });
+    } else 
+      $.post("processes", {
+        process: "getChats",
+        data: "896"
+      })
+        .then(result => {
+          result = verifyResultJSON(result)
+          if (result === false) {
+            return;
+          }
+
+          if (!result.ok) {
+            Toast.fire({
+              icon: "error",
+              title: "Error",
+              text: result.statusText
+            })
+            return;
+          }
+
+          if (!result.chats) {
+            return;
+          }
+
+          // Hide the loading animation
+          $(".profiles-block .loader").hide()
+
+          result.chats.forEach(chat => {
+
+            let $element = $(document.createElement("li"));
+            $element.append(`
+            <div class="wrapper">
+              <div class="profile-picture-wrapper">
+                <img src="${chat.picture}">
+                <div class="status-circle online"></div>
+              </div>
+              <span>
+                <strong>${chat.username}</strong>
+                <br>
+                <span class="lastMsg"></span>
+              </span>
+            </div>
+          `)
+
+            // Will already be escaped html
+            $element.find(".lastMsg").html(((chat.last_message) ? chat.last_message : ""))
+
+            $("#profiles-list").append($element)
+
+            let chatObj = new Chat(chat.username, chat.name, chat.picture, $element)
+
+            chatObj.$element.on("click", () => chatObj.init())
+
+            // Push the username to the array of all DMs
+            this.chats[chat.username] = chatObj
+          })
+
+        });
   },
 
   newChat() {
@@ -418,7 +472,7 @@ class Chat {
     // sets isSending to true before sending the message
     this.isSending = true
     // if the socket is open then we send through the socket but if it's not then the message gets sent post like normal
-    if (my.socket.socket.readyState == my.socket.socket.OPEN) {
+    if (my.socket.available()) {
       my.socket.send("M", [this.username, {
         type: false,
         content: message,
@@ -703,11 +757,17 @@ function verifyResultJSON(result) {
 }
 
 function receiveMessage(msg) {
-  console.log("MSG: ", msg);
-
   const parsed = verifyResultJSON(msg.data);
+  console.log("MSG: ", parsed);
 
-  if (parsed.sendId) {
+  if (parsed.status !== undefined) {
+    if (my.chats[parsed.username]) {
+      my.chats[parsed.username].$element.find(".status-circle")[0].className = "status-circle " + parsed.status;
+    }
+    return;
+  }
+
+  if (parsed.sendId !== undefined) {
     if (typeof my.socket.waitingActions[parsed.sendId] == "function") {
       my.socket.waitingActions[parsed.sendId](parsed);
       delete my.socket.waitingActions[parsed.sendId];
@@ -751,6 +811,8 @@ class MyWebSocket {
     this.waitingActions = {};
     this.recurringPing;
 
+    this.available = () => {return my.socket.socket.readyState == my.socket.socket.OPEN};
+
     if (typeof onopen == "function") this.onopen = onopen;
   }
 
@@ -777,10 +839,10 @@ class MyWebSocket {
   }
 
   send(instruction, content, callback) {
-    if (this.socket.readyState != this.socket.OPEN) return false;
+    if (!this.available()) return false;
     try {
       if (typeof callback == "function") this.waitingActions[this.sendId] = callback;
-      this.socket.send(JSON.stringify({ instruction: instruction, content: content, sendId: this.sendId++ }));
+      this.socket.send(JSON.stringify({ instruction: instruction, content: content, sendId: instruction=="P" ? 0 : this.sendId++ }));
     } catch (ex) {
       console.log(ex);
     }
@@ -815,13 +877,11 @@ $(function () {
   $.post("processes", { process: "getLogin", data: 869 }, function (result) {
     const parsed = verifyResultJSON(result);
     my.socket = new MyWebSocket(function () {
-      my.socket.send("L", parsed)
+      my.socket.send("L", parsed, ()=>my.getChats())
     });
     my.socket.init();
 
   })
-
-  my.getChats();
 })
 
 window.onresize = function (event) {
