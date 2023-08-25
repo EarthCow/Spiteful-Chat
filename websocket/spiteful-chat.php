@@ -91,6 +91,9 @@ class SpiteServer extends WebSocketServer {
           return;
         }
 
+        $message["content"] = str_replace("<br>", "\n", $message["content"]);
+        $message["content"] = htmlspecialchars($message["content"]);
+
         if (!$message["type"]) {
         
           $sql = "SELECT `user_id`, `name`, `picture` FROM `profiles` WHERE `username`=?";
@@ -154,6 +157,8 @@ class SpiteServer extends WebSocketServer {
             }
         }
         unset($currentUser);
+
+        $message["date"] = $lm;
 
         if ($receiver) {
           $this->send($receiver, json_encode([

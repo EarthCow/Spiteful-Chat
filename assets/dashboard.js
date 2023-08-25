@@ -48,8 +48,8 @@ let my = {
           </div>
         `)
 
-          // encodes html
-          $element.find(".lastMsg").text(((chat.last_message) ? chat.last_message : ""))
+          // Will already be escaped html
+          $element.find(".lastMsg").html(((chat.last_message) ? chat.last_message : ""))
 
           $("#profiles-list").append($element)
 
@@ -400,9 +400,8 @@ class Chat {
       <span></span>
     `)
 
-    // ensures shift enter whitespace is html complient
-    $newMsg.find("span").text(message)
-    $newMsg.find("span").html($newMsg.find("span").text().replaceAll("\n", "<br>"))
+    // ensures shift enter whitespace is html compliant
+    $newMsg.find("span").html(escapeHtml(message).replaceAll("\n", "<br>"))
 
     // appends the new message to the .messages div
     $(".messages").append($newMsg)
@@ -422,7 +421,6 @@ class Chat {
     if (my.socket.socket.readyState == my.socket.socket.OPEN) {
       my.socket.send("M", [this.username, {
         type: false,
-        date: new Date().toLocaleTimeString(),
         content: message,
       }], (result) => {
           // resets the isSending to false
@@ -432,7 +430,7 @@ class Chat {
           $lastMsgSpan.removeClass("mute italic").html("&nbsp;")
 
           if (result.ok) {
-            // set last message
+            // set last message - this one can use .text() because it is not already escaped :)
             $lastMsgSpan.text(message)
             // if the message sent it changes the transparency of the message element in the .messages div
             $newMsg.css("opacity", 1)
@@ -483,12 +481,12 @@ class Chat {
         </div>
       `);
       // set last message
-      $lastMsgSpan.text(message.content);
+      $lastMsgSpan.html(message.content);
     } else {
       // this is used for messages that ARE media
       $newMsg = $(this.createMediaMsg(message.type, message.src, message.date, message.original, false))
       // set last message
-      $lastMsgSpan.text(message.original)
+      $lastMsgSpan.html(message.original)
     }
 
     if (my.openChat === null || my.openChat.username != this.username) return;
@@ -848,6 +846,10 @@ function fixMessageBoxHeight(msgBox) {
   if ((msgBox[0].scrollHeight - 10) > msgBox.height()) {
     msgBox.css("overflow-y", "scroll")
   } else msgBox.css("overflow-y", "hidden")
+}
+
+const escapeHtml = (unsafe) => {
+  return unsafe.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;');
 }
 
 function showProfileList() {

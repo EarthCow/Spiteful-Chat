@@ -146,6 +146,9 @@ if (!isset($_POST['process']) || !isset($_POST['data'])) {
                 $response["statusText"] = "Invalid Operation";
                 die(json_encode($response));
               }
+
+              $message = str_replace("<br>", "\n", $message);
+              $message = htmlspecialchars($message);
               
               $sql = "SELECT * FROM `profiles` WHERE `username`=?";
               $statement = $connection -> prepare($sql);
@@ -279,13 +282,17 @@ if (!isset($_POST['process']) || !isset($_POST['data'])) {
 
               $sql = "INSERT INTO `media` (`msg_id`, `filename`, `original`, `type`) VALUES ($msgId, ?, ?, ?)";
               $statement = $connection -> prepare($sql);
-              $statement -> bind_param("sss", $filename, $_FILES['file']['name'], $_FILES['file']['type']);
+
+              // not sure if it's even possible to have this filename contain html but it is added to the page so it will be escaped
+              $original = htmlspecialchars($_FILES['file']['name']);
+
+              $statement -> bind_param("sss", $filename, $original, $_FILES['file']['type']);
               $statement -> execute();
 
               $sql = "UPDATE chats SET last_message = '$msgTxt' WHERE chat_id = $chatId";
               $result = $connection -> query($sql);
 
-              $response = ["ok" => true, "date" => date("m/d/Y h:i:s"), "src" => "media?id=" . $msgId, "type" => $_FILES['file']['type'], "original" => $_FILES['file']['name'], "lastMsg" => $msgTxt];
+              $response = ["ok" => true, "date" => date("m/d/Y h:i:s"), "src" => "media?id=" . $msgId, "type" => $_FILES['file']['type'], "original" => $original, "lastMsg" => $msgTxt];
               die(json_encode($response));
 
               break;
