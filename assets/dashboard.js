@@ -26,6 +26,7 @@ let my = {
 
         // Hide the loading animation
         $(".profiles-block .loader").hide()
+        $("#profiles-list").html("")
 
         parsed.chats.forEach(chat => {
 
@@ -45,7 +46,7 @@ let my = {
         `)
 
           // Will already be escaped html
-          $element.find(".lastMsg").html(((chat.last_message) ? chat.last_message : ""))
+          $element.find(".lastMsg").html(chat.last_message ?? "")
 
           $("#profiles-list").append($element)
 
@@ -203,7 +204,10 @@ let my = {
         let $element = $(document.createElement("li"));
         $element.append(`
         <div class="wrapper">
-          <img src="${result.value.receiver.picture}">
+          <div class="profile-picture-wrapper">
+            <img src="${result.value.receiver.picture}">
+            <div class="status-circle"></div>
+          </div>
           <span>
             <strong>${receiver}</strong>
             <br>
@@ -222,6 +226,8 @@ let my = {
         this.chats[receiver] = chatObj
 
         chatObj.init()
+
+        if (my.socket.available()) my.socket.send("S", receiver);
       })
   },
 
@@ -779,10 +785,15 @@ function receiveMessage(msg) {
       my.chats[parsed.sender].receive(parsed.message);
     else {
         // create the new chat
+        // status will always be online since they just messaged
+        // this logic will change when user set statuses are added
         let $element = $(document.createElement("li"));
         $element.append(`
         <div class="wrapper">
-          <img src="${parsed.info.picture}">
+          <div class="profile-picture-wrapper">
+            <img src="${parsed.info.picture}">
+            <div class="status-circle online"></div>
+          </div>
           <span>
             <strong>${parsed.sender}</strong>
             <br>

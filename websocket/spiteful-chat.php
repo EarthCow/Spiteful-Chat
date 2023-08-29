@@ -235,16 +235,17 @@ class SpiteServer extends WebSocketServer {
 
         $row = $result->fetch_all(MYSQLI_ASSOC);
 
-        $index = 0;
-        foreach ($row as $chat) {
+        // Pass $chat as a reference to add the status key
+        foreach ($row as &$chat) {
           foreach ($this->users as $currentUser) {
             if ($currentUser->username === $chat["username"]) {
-              $row[$index++]["status"] = "online";
+              $chat["status"] = "online";
               break;
             }
           }
           unset($currentUser);
         }
+        unset($chat);
 
         // if there are no rows (chats) then send an empty array
         $this->respond($user, "", true, [
@@ -252,6 +253,20 @@ class SpiteServer extends WebSocketServer {
           "sendId" => $parsedMsg["sendId"]
         ]);
 
+        break;
+      case "S":
+        if (empty($parsedMsg["content"])) return;
+
+        foreach ($this->users as $currentUser) {
+          if ($currentUser->username === $parsedMsg["content"]) {
+            $this->send($user, json_encode([
+              "username" => $currentUser->username,
+              "status" => "online"
+            ]));
+            break;
+          }
+        }
+        unset($currentUser);
         break;
       case "P":
         $this->respond($user, "Pong!", true);
