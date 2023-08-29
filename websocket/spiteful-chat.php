@@ -5,11 +5,14 @@ require_once('websockets.php');
 require_once("/var/www/private/spiteful-chat/database.php");
 
 class SpiteServer extends WebSocketServer {
+  private $mysqlLastUsed;
 
   // $maxBufferSize is 1MB
   function __construct($addr, $port, $bufferLength=1048576) {
     parent::__construct($addr, $port, $bufferLength);
     $this->userClass = 'SpiteUser';
+
+    $this->updateMysqlLastUsed();
   }
 
   function respond($user, $statusText, $ok = false, $obj = false) {
@@ -19,6 +22,10 @@ class SpiteServer extends WebSocketServer {
     ];
     $finalObj = ($obj === false ? $response : (object) array_merge((array) $response, (array) $obj));
     $this->send($user, json_encode($finalObj));
+  }
+
+  protected function updateMysqlLastUsed() {
+    $this->mysqlLastUsed = time();
   }
 
   // ran when server recieves data
@@ -86,6 +93,7 @@ class SpiteServer extends WebSocketServer {
             ORDER BY `modified` DESC;
           ";
           $result = $GLOBALS["connection"] -> query($sql);
+          $this->updateMysqlLastUsed();
 
           $row = $result->fetch_all(MYSQLI_ASSOC);
 
@@ -178,6 +186,8 @@ class SpiteServer extends WebSocketServer {
           $statement -> bind_param("s", $truncated);
           $statement -> execute();
         }
+
+        $this->updateMysqlLastUsed();
         
         $lm = date("m/d/Y h:i:s");
 
@@ -221,6 +231,7 @@ class SpiteServer extends WebSocketServer {
         ORDER BY `modified` DESC;
         ";
         $result = $GLOBALS["connection"] -> query($sql);
+        $this->updateMysqlLastUsed();
 
         $row = $result->fetch_all(MYSQLI_ASSOC);
 
@@ -272,6 +283,7 @@ class SpiteServer extends WebSocketServer {
       ORDER BY `modified` DESC;
     ";
     $result = $GLOBALS["connection"] -> query($sql);
+    $this->updateMysqlLastUsed();
 
     $row = $result->fetch_all(MYSQLI_ASSOC);
 
@@ -293,7 +305,12 @@ class SpiteServer extends WebSocketServer {
   }
 
   protected function tick() {
-
+    // Close the mysql server for inactivity
+    if ((time() - $this->mysqlLastUsed) > 600) {// 10 minutes
+      if (!$GLOBALS["connection"]->ping()) {
+        $this->stdout("MYSQL: Pinged false - Current ping: " . $GLOBALS["connection"]->ping());
+      }
+    }
   }
 }
 

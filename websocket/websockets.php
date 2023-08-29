@@ -339,7 +339,7 @@ abstract class WebSocketServer {
   public function stdout($message)
   {
     if($this->interactive)
-      echo "$message\n";
+      echo "[". date("H:i:s") ."] $message\n";
   }
 
   public function stderr($message)
