@@ -16,13 +16,17 @@ The steps to host your own version of this repository are as follows:
 3. Create a /private/spiteful-chat/ directory at the same level as your DOCUMENT_ROOT directory
 4. Create /private/spiteful-chat/database.php:
   
-  `<?php $GLOBALS["connection"] = new mysqli($host, $username, $password, $database);`
+```
+<?php $GLOBALS["connection"] = new mysqli($host, $username,$password, $database);
+```
 
-> Note: You may need to change the required resource in websockets/spiteful-chat.php to match your full path as $_SERVER["DOCUMENT_ROOT"] cannot be used there
+**Note:** You may need to change the required resource in websocket/spiteful-chat.php to match your full path as $_SERVER["DOCUMENT_ROOT"] cannot be used there
 
 5. Create /private/spiteful-chat/google-client-id.php:
   
-  `<?php $google_client_id = "your.google.client.id";`
+```
+<?php $google_client_id = "your.google.client.id";
+```
 
 6. Create /private/spiteful-chat/chats/media/ directory
 7. Ensure PHP / Apache (typically www-data) has appropriate read/write permissions to the new directories
@@ -39,5 +43,6 @@ RewriteRule ^/_ws_/(.*) ws://localhost:12345/$1 [P,L]
 ProxyPass /_ws_/ ws://localhost:12345
 ProxyPassReverse /_ws_/ ws://localhost:12345
 ```
-> Get more information about this configuration [here](https://httpd.apache.org/docs/2.4/mod/mod_proxy_wstunnel.html)
+Get more information about this configuration [here](https://httpd.apache.org/docs/2.4/mod/mod_proxy_wstunnel.html)
+
 10. Run `$ php websocket/spiteful-chat.php` to start the websocket server
