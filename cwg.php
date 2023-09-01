@@ -6,7 +6,7 @@
 if (!isset($_POST['credential'])) {
   header("HTTP/1.0 404 Not Found");
   // need to include a 404 document here but for now I will use redirect
-  header("Location: https://earthcow.xyz/404");
+  header("Location: /404");
   die();
 } else {
   
@@ -16,7 +16,9 @@ if (!isset($_POST['credential'])) {
 
   $id_token = $_POST["credential"];
 
-  $client = new Google_Client(['client_id' => "905753697514-bat1tv7nld4ltb4fhfo9op5gmf93jggj.apps.googleusercontent.com"]);  // Specify the CLIENT_ID of the app that accesses the backend
+  require_once($_SERVER['DOCUMENT_ROOT'] . "/../private/spiteful-chat/google-client-id.php");
+
+  $client = new Google_Client(['client_id' => $google_client_id]);  // Specify the CLIENT_ID of the app that accesses the backend
   $payload = $client->verifyIdToken($id_token);
   if (!$payload) {
 
@@ -27,7 +29,7 @@ if (!isset($_POST['credential'])) {
 
   } else {
 
-    require_once("/var/www/private/spiteful-chat/database.php");
+    require_once($_SERVER['DOCUMENT_ROOT'] . "/../private/spiteful-chat/database.php");
     $connection = $GLOBALS["connection"];
 
     $google_id = $payload['sub'];

@@ -839,7 +839,7 @@ class MyWebSocket {
   }
 
   init() {
-    const host = "wss://earthcow.xyz/_ws_/" + this.credentials;
+    const host = "wss://" + window.location.hostname + "/_ws_/" + this.credentials;
     try {
       this.socket = new WebSocket(host);
       this.socket.onopen = (msg) => {

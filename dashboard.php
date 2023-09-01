@@ -20,7 +20,7 @@ if ($restrictAccess && !in_array($userId, $administrators)) {
 
 $token = $_SESSION['token'];
 
-require_once("/var/www/private/spiteful-chat/database.php");
+require_once($_SERVER['DOCUMENT_ROOT'] . "/../private/spiteful-chat/database.php");
 $connection = $GLOBALS['connection'];
 
 $sql = "SELECT * FROM `profiles` WHERE `user_id`=?";

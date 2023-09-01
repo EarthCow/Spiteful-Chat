@@ -10,7 +10,7 @@ if (!isset($_POST['process']) || !isset($_POST['data'])) {
   if (!isset($_SESSION['id']) || !isset($_SESSION['token'])) {
     die("SESS");
   } else {
-    $private = "/var/www/private/spiteful-chat";
+    $private = $_SERVER['DOCUMENT_ROOT'] . "/../private/spiteful-chat";
     require_once("$private/database.php");
     $connection = $GLOBALS['connection'];
 
