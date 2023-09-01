@@ -21,15 +21,6 @@ class WebSocketUser {
   }
 }
 
-class MyUser extends WebSocketUser {
-  public $myId;
-
-  function __construct($id, $socket, $myId=0) {
-    parent::__construct($id, $socket);
-    $this->myId = $myId;
-  }
-}
-
 class SpiteUser extends WebSocketUser {
   public $sessId;
   public $sessToken;

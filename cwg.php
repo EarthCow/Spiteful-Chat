@@ -2,7 +2,7 @@
 
 // Continue with Google
 
-// Verify requested information is recieved
+// Verify requested information is received
 if (!isset($_POST['credential'])) {
   header("HTTP/1.0 404 Not Found");
   // need to include a 404 document here but for now I will use redirect
@@ -60,7 +60,9 @@ if (!isset($_POST['credential'])) {
     } else {
       $row = $result -> fetch_assoc();
 
-      session_start();
+      session_start([
+        'cookie_lifetime' => 28800, // 8 hours
+      ]);
       $_SESSION["id"] = $row["user_id"];
       $_SESSION["token"] = $token;
       header("Location: dashboard");

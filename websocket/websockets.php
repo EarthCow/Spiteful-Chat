@@ -36,6 +36,11 @@ abstract class WebSocketServer {
   {
   }
 
+  // Override to handle an active handshake to add additional checks
+  protected function doingHandShake($user, $headers, &$handshakeResponse)
+  {
+  }
+
   protected function send($user, $message) {
     if ($user->handshake) {
     $message = $this->frame($message,$user);
@@ -200,7 +205,6 @@ abstract class WebSocketServer {
 
       if ($triggerClosed)
       {
-        $this->stdout('Client disconnected. '. strval(spl_object_id($disconnectedUser->socket)) );
         $this->closed($disconnectedUser);
         socket_close($disconnectedUser->socket);
       }
@@ -230,6 +234,9 @@ abstract class WebSocketServer {
         $headers['get'] = trim($reqResource[1]);
       }
     }
+
+    $handshakeResponse = "";
+
     if (isset($headers['get']))
       $user->requestedResource = $headers['get'];
     // todo: fail the connection
@@ -263,10 +270,12 @@ abstract class WebSocketServer {
     if (($this->headerSecWebSocketExtensionsRequired && !isset($headers['sec-websocket-extensions'])) || ($this->headerSecWebSocketExtensionsRequired && !$this->checkWebsocExtensions($headers['sec-websocket-extensions'])))
       $handshakeResponse = 'HTTP/1.1 400 Bad Request';
 
+    $this->doingHandShake($user, $headers, $handshakeResponse);
 
     // Done verifying the _required_ headers and optionally required headers.
-    if (isset($handshakeResponse))
+    if (isset($handshakeResponse) && !empty($handshakeResponse))
     {
+      $this->stdout($handshakeResponse);
       socket_write($user->socket,$handshakeResponse,strlen($handshakeResponse));
       $this->disconnect($user->socket);
       return;

@@ -38,83 +38,38 @@ class SpiteServer extends WebSocketServer {
       return;
     }
 
+    $sql = "SELECT * FROM `profiles` WHERE `user_id`=?";
+    $statement = $GLOBALS['connection']->prepare($sql);
+    $statement->bind_param("i", $user->sessId);
+    $this->updateMysqlLastUsed();
+
+    if (!$statement->execute()) {
+      $this->respond($user, "SESS:DBF");
+      return;
+    }
+
+    $result = $statement->get_result();
+
+    if ($result->num_rows == 0) {
+      $this->respond($user, "SESS:NEX");
+      return;
+    }
+
+    $row = $result->fetch_assoc();
+    if ($row['token'] != $user->sessToken) {
+      $this->respond($user, "SESS:TOK");
+      return;
+    }
+
+    $token_generated = strtotime($row['token_generated']);
+    $timeBetween = time() - $token_generated;
+
+    if ($timeBetween > 28800) { // 28800 is 8 hours
+      $this->respond($user, "SESS:EXP");
+      return;
+    }
+
     switch ($parsedMsg["instruction"]) {
-      case "L":
-        if ($user->sessId != null) {
-          $this->respond($user, "Logged in already!");
-        } else {
-          $sql = "SELECT * FROM `profiles` WHERE `user_id`=?";
-          $statement = $GLOBALS['connection']->prepare($sql);
-          $statement->bind_param("i", $parsedMsg["content"]["id"]);
-  
-          if (!$statement->execute()) {
-            $this->respond($user, "CSDB10");
-            return;
-          }
-  
-          $result = $statement->get_result();
-  
-          if ($result->num_rows == 0) {
-            $this->respond($user, "CNE1");
-            return;
-          }
-  
-          $row = $result->fetch_assoc();
-          if ($row['token'] != $parsedMsg["content"]["token"]) {
-            $this->respond($user, "CNE1");
-            return;
-          }
-  
-          $token_generated = strtotime($row['token_generated']);
-          $timeBetween = time() - $token_generated;
-  
-          if ($timeBetween > 28800) { // 28800 is 8 hours
-            $this->respond($user, "SESS");
-            return;
-          }
-  
-          $user->sessId = $row["user_id"];
-          $user->sessToken = $row["token"];
-
-          $user->username = $row["username"];
-          $user->name = $row["name"];
-          $user->picture = $row["picture"];
-
-          // Will eventually need to define a friends system likely another relational table :)
-          // For now I will get the current chats and use that to determine the active friends
-
-          // When status is added as a table column "appear offline" would negate this entire logic
-          $sql = "
-            SELECT profiles.username
-            FROM `chats`
-            JOIN `profiles`
-            ON IF(chats.sender = $user->sessId, chats.receiver = profiles.user_id, chats.sender = profiles.user_id)
-            WHERE chats.sender = $user->sessId OR chats.receiver = $user->sessId
-            ORDER BY `modified` DESC;
-          ";
-          $result = $GLOBALS["connection"] -> query($sql);
-          $this->updateMysqlLastUsed();
-
-          $row = $result->fetch_all(MYSQLI_ASSOC);
-
-          foreach ($row as $chat) {
-            foreach ($this->users as $currentUser) {
-              if ($currentUser->username === $chat["username"]) {
-                $this->send($currentUser, json_encode([
-                  "username" => $user->username,
-                  "status" => "online" // This will eventually reflect an option within the profiles table for now "online" is fine
-                ]));
-                break;
-              }
-            }
-            unset($currentUser);
-          }
-
-          $this->respond($user, "User logged in!", true, [
-            "sendId" => $parsedMsg["sendId"]
-          ]);
-        }
-        break;
       case "M":
         if (empty($parsedMsg["content"])) {
           $this->respond($user, "Invalid operation");
@@ -204,6 +159,7 @@ class SpiteServer extends WebSocketServer {
 
         if ($receiver) {
           $this->send($receiver, json_encode([
+            "ok" => true,
             "sender" => $user->username,
             "message" => $message,
             "info" => [
@@ -260,6 +216,7 @@ class SpiteServer extends WebSocketServer {
         foreach ($this->users as $currentUser) {
           if ($currentUser->username === $parsedMsg["content"]) {
             $this->send($user, json_encode([
+              "ok" => true,
               "username" => $currentUser->username,
               "status" => "online"
             ]));
@@ -280,6 +237,97 @@ class SpiteServer extends WebSocketServer {
 
   protected function connecting ($user) {
     $this->stdout("Client attempting to connect");
+  }
+
+  protected function doingHandShake($user, $headers, &$handshakeResponse) {
+    // If there's already an issue there's no reason to check for another
+    if (!empty($handshakeResponse)) return;
+
+    if (!isset($headers['get']) || empty(trim($headers['get'])) || trim($headers['get']) == "/") {
+      $handshakeResponse = 'HTTP/1.1 400 Bad Request';
+      return;
+    }
+
+    List($sessId, $token) = explode(".", substr($headers['get'], 1));
+
+    if (empty($sessId) || empty($token)) {
+      $handshakeResponse = 'HTTP/1.1 400 Bad Request';
+      return;
+    }
+
+    $sql = "SELECT * FROM `profiles` WHERE `user_id`=?";
+    $statement = $GLOBALS['connection']->prepare($sql);
+    $statement->bind_param("i", $sessId);
+    $this->updateMysqlLastUsed();
+
+    // Failed execute MySQL statement
+    if (!$statement->execute()) {
+      $handshakeResponse = 'HTTP/1.1 400 Bad Request';
+      return;
+    }
+
+    $result = $statement->get_result();
+
+    // Failed to find the user
+    if ($result->num_rows == 0) {
+      $handshakeResponse = 'HTTP/1.1 400 Bad Request';
+      return;
+    }
+
+    $row = $result->fetch_assoc();
+
+    // Failed to validate token
+    if ($row['token'] != $token) {
+      $handshakeResponse = 'HTTP/1.1 400 Bad Request';
+      return;
+    }
+
+    $token_generated = strtotime($row['token_generated']);
+    $timeBetween = time() - $token_generated;
+
+    // Token expired
+    if ($timeBetween > 28800) { // 28800 is 8 hours
+      $handshakeResponse = 'HTTP/1.1 400 Bad Request';
+      return;
+    }
+
+    $user->sessId = $row["user_id"];
+    $user->sessToken = $row["token"];
+
+    $user->username = $row["username"];
+    $user->name = $row["name"];
+    $user->picture = $row["picture"];
+
+    // Will eventually need to define a friends system likely another relational table :)
+    // For now I will get the current chats and use that to determine the active friends
+
+    // When status is added as a table column "appear offline" would negate this entire logic
+    $sql = "
+      SELECT profiles.username
+      FROM `chats`
+      JOIN `profiles`
+      ON IF(chats.sender = $sessId, chats.receiver = profiles.user_id, chats.sender = profiles.user_id)
+      WHERE chats.sender = $sessId OR chats.receiver = $sessId
+      ORDER BY `modified` DESC;
+    ";
+    $result = $GLOBALS["connection"] -> query($sql);
+    $this->updateMysqlLastUsed();
+
+    $row = $result->fetch_all(MYSQLI_ASSOC);
+
+    foreach ($row as $chat) {
+      foreach ($this->users as $currentUser) {
+        if ($currentUser->username === $chat["username"]) {
+          $this->send($currentUser, json_encode([
+            "ok" => true,
+            "username" => $user->username,
+            "status" => "online" // This will eventually reflect an option within the profiles table for now "online" is fine
+          ]));
+          break;
+        }
+      }
+    }
+
   }
   
   protected function connected ($user) {
@@ -306,13 +354,13 @@ class SpiteServer extends WebSocketServer {
       foreach ($this->users as $currentUser) {
         if ($currentUser->username === $chat["username"]) {
           $this->send($currentUser, json_encode([
+            "ok" => true,
             "username" => $user->username,
             "status" => "" // Blank will remove status and be "offline"
           ]));
           break;
         }
       }
-      unset($currentUser);
     }
     // Do nothing: This is where cleanup would go, in case the user had any sort of
     // open files or other objects associated with them.  This runs after the socket 

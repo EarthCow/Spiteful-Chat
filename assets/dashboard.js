@@ -85,6 +85,7 @@ let my = {
 
           // Hide the loading animation
           $(".profiles-block .loader").hide()
+          $("#profiles-list").html("")
 
           result.chats.forEach(chat => {
 
@@ -93,7 +94,7 @@ let my = {
             <div class="wrapper">
               <div class="profile-picture-wrapper">
                 <img src="${chat.picture}">
-                <div class="status-circle online"></div>
+                <div class="status-circle"></div>
               </div>
               <span>
                 <strong>${chat.username}</strong>
@@ -549,6 +550,11 @@ class Chat {
       $lastMsgSpan.html(message.original)
     }
 
+    // move dm to the top of the list
+    if (!this.$element.is(":first-child")) {
+      this.$element.prependTo("#profiles-list")
+    }
+
     if (my.openChat === null || my.openChat.username != this.username) return;
 
     // render the messages and remove the loader from .messages
@@ -766,6 +772,12 @@ function receiveMessage(msg) {
   const parsed = verifyResultJSON(msg.data);
   console.log("MSG: ", parsed);
 
+  if (!parsed.ok) {
+    console.warn(parsed.statusText);
+    if (parsed.statusText.split(":")[0] == "SESS")
+      window.location.reload(); // TODO: add a way to retrieve the error code
+  }
+
   if (parsed.status !== undefined) {
     if (my.chats[parsed.username]) {
       my.chats[parsed.username].$element.find(".status-circle")[0].className = "status-circle " + parsed.status;
@@ -816,29 +828,29 @@ function receiveMessage(msg) {
 }
 
 class MyWebSocket {
-  constructor(onopen = false) {
+  constructor(credentials) {
+    this.credentials = credentials;
     this.connectionAttempts = 0;
     this.sendId = 0;
     this.waitingActions = {};
     this.recurringPing;
 
     this.available = () => {return my.socket.socket.readyState == my.socket.socket.OPEN};
-
-    if (typeof onopen == "function") this.onopen = onopen;
   }
 
   init() {
-    const host = "wss://earthcow.xyz/_ws_/";
+    const host = "wss://earthcow.xyz/_ws_/" + this.credentials;
     try {
       this.socket = new WebSocket(host);
       this.socket.onopen = (msg) => {
         this.connectionAttempts = 0;
-        if (this.onopen) this.onopen();
+        my.getChats();
         console.log("WEBSOCKET CONNECTED");
         this.recurringPing = setInterval(()=>{this.send("P", "Ping!")}, 4000);
       };
       this.socket.onmessage = receiveMessage;
       this.socket.onclose = (msg) => {
+        if (this.connectionAttempts === 0) my.getChats();
         clearInterval(this.recurringPing);
         console.warn("WEBSOCKET DISCONNECTED");
         this.reconnect();
@@ -887,11 +899,8 @@ $(function () {
 
   $.post("processes", { process: "getLogin", data: 869 }, function (result) {
     const parsed = verifyResultJSON(result);
-    my.socket = new MyWebSocket(function () {
-      my.socket.send("L", parsed, ()=>my.getChats())
-    });
+    my.socket = new MyWebSocket(`${parsed.id}.${parsed.token}`);
     my.socket.init();
-
   })
 })
 
