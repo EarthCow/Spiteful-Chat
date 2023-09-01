@@ -538,6 +538,9 @@ button:hover,
     max-height: 100%;
     border-radius: 0;
   }
+  .messageBar textarea {
+    font-size: 16px;
+  }
 }
 
 @media only screen and (max-width: 550px) {
