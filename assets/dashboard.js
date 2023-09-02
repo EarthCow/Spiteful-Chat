@@ -921,9 +921,9 @@ function showMsgBlock() {
 
 function fixMessageBoxHeight(msgBox) {
   msgBox[0].style.height = 0;
-  msgBox[0].style.height = ((msgBox[0].scrollHeight > 1000) ? 1000 : msgBox[0].scrollHeight) + "px";
+  msgBox[0].style.height = ((msgBox[0].scrollHeight > 1000) ? 1000 : msgBox[0].scrollHeight + 1) + "px";
 
-  if ((msgBox[0].scrollHeight - 10) > msgBox.height()) {
+  if ((msgBox[0].scrollHeight - 10) > msgBox.outerHeight()) {
     msgBox.css("overflow-y", "scroll")
   } else msgBox.css("overflow-y", "hidden")
 }

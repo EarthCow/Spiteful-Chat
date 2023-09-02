@@ -401,6 +401,9 @@ button:hover,
 
 .messageBar {
   display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: 0 .75rem;
 
   box-shadow: 0px -5px 10px rgb(0 0 0 / 35%);
   z-index: 2;
@@ -408,28 +411,34 @@ button:hover,
 
 .messageBar button {
   border: none;
+  border-radius: 50%;
+  height: 2rem;
+  width: 2rem;
   background-color: transparent;
-  border-top: 1px solid #d3d3d3;
+  cursor: pointer;
+  transition: .25s background-color ease-in-out;
 }
 
-.messageBar button:first-child {
-  border-right: 1px solid #d3d3d3;
-}
-
-.messageBar button:last-child {
-  border-left: 1px solid #d3d3d3;
+.messageBar button:hover {
+  background-color: #4c4c4c;
 }
 
 .messageBar textarea {
-  min-height: 65px;
   max-height: 25vh;
   width: 100%;
+  height: 3rem;
   resize: none;
   overflow-y: hidden;
 
-  border: none;
-  border-top: 1px solid #d3d3d3;
+  border: 1px solid #d3d3d3;
+  border-radius: 2.5rem;
+  margin: .5rem 0;
+  padding: 1rem;
   background-color: transparent;
+}
+
+.messageBar textarea:focus {
+  outline:none;
 }
 
 .no-profile-selection {

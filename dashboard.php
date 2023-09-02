@@ -114,7 +114,7 @@ $connection->query($sql) or die("An error occurred CULA1"); // Code update last 
         </div>
         <div class="messageBar" style="display:none;">
           <button class="mediaBtn"><i class="fa-solid fa-upload"></i></button>
-          <textarea class="msg" placeholder="message"></textarea>
+          <textarea class="msg" placeholder="Message"></textarea>
           <button class="sendBtn"><i class="fa-solid fa-arrow-right"></i></button>
         </div>
         <div class="no-profile-selection">
