@@ -260,6 +260,10 @@ class Chat {
 
     this.isSending = false
     this.msgId = 0
+
+    this.msgSection = 1
+    this.isGettingMessages = false
+    this.hasAllMessages = false
   }
   createMediaMsg(type, src, date, original, mine, append = false) {
     // split the mime type and get the first type (video/mp4 -> "video")
@@ -304,6 +308,71 @@ class Chat {
       return;
     }
     return msg
+  }
+  getMessages(prepend = false) {
+    this.isGettingMessages = true
+    if (prepend) {
+      $(".messages").prepend($(`
+        <div class="loader"></div>
+        <label>Loading Messages</label>
+      `))
+    }
+    console.log("Now loading section", this.msgSection)
+    $.post("processes", {
+      process: "getMessages",
+      data: JSON.stringify([this.username, this.msgSection++])
+    })
+      .then(result => {
+        result = verifyResultJSON(result)
+        if (result === false) {
+          return;
+        }
+
+        // verify the result of the request
+        if (!result.ok) {
+          Swal.fire(
+            "Error",
+            result.statusText,
+            "error"
+          )
+        }
+
+        // set variable for the html messages to be iterated and appended to
+        let messageElements = ""
+        // run the iteration on each message
+        result.messages.forEach(message => {
+          // if the message doesn't have a subsequent type variable it is NOT media
+          if (!message.type) {
+            // generate the html text message
+            messageElements += `
+              <div class="messageWrapper${((message.mine) ? " myMessage" : "")}" title="${message.date}">
+                <img src="${((message.mine) ? my.picture : this.picture)}">
+                <span>${message.content.replaceAll("\n", "<br>")}</span>
+              </div>
+            `
+          } else {
+            // this is used for messages that ARE media
+            messageElements += this.createMediaMsg(message.type, message.content, message.date, message.original, message.mine)
+          }
+
+          this.msgId++
+        });
+
+        if (prepend) {
+          $(".messages .loader ~ label, .messages .loader").remove()
+          $(".messages").prepend(messageElements)
+        } else {
+          // render the messages and remove the loader from .messages
+          $(".messages").html(messageElements)
+        }
+        $(".messageWrapper span img, .messageWrapper span video").css("max-height", $(".messagesContainer").height())
+
+        this.hasAllMessages = messageElements.length < 25
+
+        this.isGettingMessages = false
+
+      }
+    )
   }
   init() {
     // verify the chat is in the array of chats
@@ -380,54 +449,11 @@ class Chat {
     $(".msg").focus()
 
     // initiate the request for the messages
-    $.post("processes", {
-      process: "getMessages",
-      data: this.username
-    })
-      .then(result => {
-        result = verifyResultJSON(result)
-        if (result === false) {
-          return;
-        }
+    this.msgSection = 1;
+    this.getMessages();
 
-        // verify the result of the request
-        if (!result.ok) {
-          Swal.fire(
-            "Error",
-            result.statusText,
-            "error"
-          )
-        }
+    my.openChat = this;
 
-        // set variable for the html messages to be iterated and appended to
-        let messageElements = ""
-        // run the iteration on each message
-        result.messages.forEach(message => {
-          // if the message doesn't have a subsequent type variable it is NOT media
-          if (!message.type) {
-            // generate the html text message
-            messageElements += `
-              <div class="messageWrapper${((message.mine) ? " myMessage" : "")}" title="${message.date}">
-                <img src="${((message.mine) ? my.picture : this.picture)}">
-                <span>${message.content.replaceAll("\n", "<br>")}</span>
-              </div>
-            `
-          } else {
-            // this is used for messages that ARE media
-            messageElements += this.createMediaMsg(message.type, message.content, message.date, message.original, message.mine)
-          }
-
-          this.msgId++
-        });
-
-        // render the messages and remove the loader from .messages
-        $(".messages").html(messageElements)
-        $(".messageWrapper span img, .messageWrapper span video").css("max-height", $(".messagesContainer").height())
-
-        my.openChat = this;
-
-      }
-      )
   }
   message() {
     // won't send a message if another one is being sent
@@ -902,6 +928,14 @@ $(function () {
     my.socket = new MyWebSocket(`${parsed.id}.${parsed.token}`);
     my.socket.init();
   })
+
+  // Message container scroll
+  $(".messagesContainer").scroll(function() {
+    if (my.openChat.hasAllMessages) return;
+    if ((($(".messagesContainer").scrollTop() - $(".messagesContainer")[0].clientHeight) + $(".messagesContainer")[0].scrollHeight) < 200 && !my.openChat.isGettingMessages) {
+      my.openChat.getMessages(true);
+    }
+  });
 })
 
 window.onresize = function (event) {
