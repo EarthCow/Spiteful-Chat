@@ -3,7 +3,7 @@
     include("./assets/variables.php");
     
     if (isset($_SESSION["id"])) {
-        header("Location: $chatRoot/dashboard");
+        header("Location: {$chatRoot}dashboard");
         die();
     }
 
