@@ -31,7 +31,7 @@ The steps to host your own version of this repository are as follows:
 6. Create /private/spiteful-chat/chats/media/ directory
 7. Ensure PHP / Apache / Nginx (typically www-data) has appropriate read/write permissions to the new directories (often overlooked)
 8. If you are using Apache enable both the proxy and proxy-wstunnel modules
-9. Add the following to your SSL virtual host (usually port 443):
+9. Add the following to your SSL virtual host (Apache) or server block (Nginx) (usually port 443):
 
 For an **Apache** setup
 ```
@@ -46,18 +46,14 @@ ProxyPassReverse /_ws_/ ws://127.0.0.1:12345
 ```
 For a **Nginx** setup
 ```
-server {
-  ...
-    location ~ /_ws_/* {
-      rewrite ^/_ws_/(.*)$ /$1 break;
-      proxy_pass http://127.0.0.1:12345;
-      proxy_http_version 1.1;
-      proxy_set_header Upgrade $http_upgrade;
-      proxy_set_header Connection 'upgrade';
-      proxy_set_header Host $host;
-      proxy_cache_bypass $http_upgrade;
-    }
-  ...
+location ~ /_ws_/* {
+  rewrite ^/_ws_/(.*)$ /$1 break;
+  proxy_pass http://127.0.0.1:12345;
+  proxy_http_version 1.1;
+  proxy_set_header Upgrade $http_upgrade;
+  proxy_set_header Connection 'upgrade';
+  proxy_set_header Host $host;
+  proxy_cache_bypass $http_upgrade;
 }
 ```
 Get more information about this configuration [here](https://httpd.apache.org/docs/2.4/mod/mod_proxy_wstunnel.html) for Apache or [here](https://www.nginx.com/blog/websocket-nginx/) for Nginx
