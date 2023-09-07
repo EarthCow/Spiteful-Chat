@@ -1,6 +1,13 @@
 <?php
 
-    require_once "users.php";
+    set_error_handler("spiteErrorHandler");
+    
+    $noSession = true;
+    require_once "./websocket/users.php";
+    require_once "./assets/configuration.php";
+    require_once "./assets/languages.php";
+    
+    restore_error_handler();
     
     abstract class WebSocketServer
     {
@@ -27,11 +34,11 @@
             socket_listen($this->master, 20) or die("Failed: socket_listen()");
             $this->sockets["m"] = $this->master;
             $this->stdout(
-                "\033[36m[i] \033[39mServer listening on " .
+                "\033[36m[i] \033[39m" . word("server-listening-on") . " " .
                     $addr .
                     ":" .
                     $port .
-                    " with master socket " .
+                    " " . word("with-master-socket") . " " .
                     strval(spl_object_id($this->master))
             );
         }
@@ -754,3 +761,5 @@
             echo ")\n";
         }
     }
+
+?>

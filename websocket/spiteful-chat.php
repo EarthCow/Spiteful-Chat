@@ -1,10 +1,19 @@
 #!/usr/bin/env php
 <?php
 
-    $noSession = true;
-    require_once "assets/variables.php";
-    require_once "websocket/websockets.php";
+    function spiteErrorHandler($errno, $errstr, $errfile, $errline) {
+        echo "\033[31m[!] \033[39mThis command must be run from the spiteful-chat folder.\n";
+        die();
+    }
+    
+    set_error_handler("spiteErrorHandler");
+    
+    require_once "./assets/configuration.php";
+    require_once "./assets/languages.php";
+    require_once "./websocket/websockets.php";
     require_once "$privateFolder/database.php";
+    
+    restore_error_handler();
     
     class SpiteServer extends WebSocketServer
     {
@@ -82,7 +91,7 @@
             switch ($parsedMsg["instruction"]) {
                 case "M":
                     if (empty($parsedMsg["content"])) {
-                        $this->respond($user, "Invalid operation");
+                        $this->respond($user, word("invalid-operation"));
                         return;
                     }
                     
@@ -94,7 +103,7 @@
                             $receiverUsername
                         )
                     ) {
-                        $this->respond($user, "Invalid operation");
+                        $this->respond($user, word("invalid-operation"));
                         return;
                     }
                     
@@ -117,7 +126,7 @@
                         $result = $statement->get_result();
                         
                         if ($result->num_rows == 0) {
-                            $this->respond($user, "Invalid Operation");
+                            $this->respond($user, word("invalid-operation"));
                             return;
                         }
                         
@@ -132,8 +141,7 @@
                             if (
                                 strcasecmp($receiverUsername, $user->username) == 0
                             ) {
-                                $response["statusText"] =
-                                    "Fucking dumbass no you cannot message yourself lonely ass";
+                                $response["statusText"] = word("chat-self-error");
                                 die(json_encode($response));
                             }
                             
@@ -142,8 +150,7 @@
                             
                             if (!$result) {
                                 $response = [
-                                    "statusText" =>
-                                        "Failed to create a new conversation",
+                                    "statusText" => word("conversation-creation-fail"),
                                 ];
                                 die(json_encode($response));
                             }
@@ -197,7 +204,7 @@
                         );
                     }
                     
-                    $this->respond($user, "Message was sent successfully!", true, [
+                    $this->respond($user, word("message-sent-successfully"), true, [
                         "lm" => $lm,
                         "id" => isset($insertedId) ? $insertedId : 0,
                         "sendId" => $parsedMsg["sendId"],
@@ -262,7 +269,7 @@
                     $this->respond($user, "Pong!", true);
                     break;
                 default:
-                    $response["statusText"] = "Invalid instruction recieved!";
+                    $response["statusText"] = word("invalid-instruction");
                     $this->send($user, json_encode($response));
                     break;
             }
@@ -270,7 +277,7 @@
         
         protected function connecting($user)
         {
-            $this->stdout("\033[36m[i] \033[39mClient attempting to connect...");
+            $this->stdout("\033[36m[i] \033[39m" . word("client-connecting"));
         }
         
         protected function doingHandShake($user, $headers, &$handshakeResponse)
@@ -375,12 +382,12 @@
         
         protected function connected($user)
         {
-            $this->stdout("\033[36m[i] \033[39mUser Connected - Count: " . count($this->users));
+            $this->stdout("\033[36m[i] \033[39m" . word("user-connected") . " - " . word("count") . ": " . count($this->users));
         }
         
         protected function closed($user)
         {
-            $this->stdout("\033[36m[i] \033[39mUser Disconnected - Count: " . count($this->users));
+            $this->stdout("\033[36m[i] \033[39m" . word("user-disconnected") . " - " . word("count") . ": " . count($this->users));
             if ($user->username == null) {
                 return;
             }
@@ -424,7 +431,7 @@
                 // 10 minutes
                 if (!$GLOBALS["connection"]->ping()) {
                     $this->stdout(
-                        "\033[31m[!] \033[39mMYSQL: Pinged false - Current ping: " .
+                        "\033[31m[!] \033[39m" . word("mysql-false-ping") . " " .
                             $GLOBALS["connection"]->ping()
                     );
                 }

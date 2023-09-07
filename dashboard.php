@@ -1,22 +1,20 @@
 <?php
 
-    // error_reporting(E_ALL);
-    // ini_set("display_errors", 1);
-    
     // Restrict access only to administrators
     $administrators = [1];
-    $restrictAccess = false;
     
     $noSession = false;
-    include("./assets/variables.php");
+    require_once "./assets/configuration.php";
+    require_once "./assets/languages.php";
+    
     // Check if user is logged in
     if (!isset($_SESSION["id"]) || !isset($_SESSION["token"])) {
-      header("Location: $chatRoot"); // Redirects to /spiteful-chat/
+      header("Location: ./"); // Redirects to /spiteful-chat/
       die();
     }
     
     $userId = $_SESSION["id"];
-    if ($restrictAccess && !in_array($userId, $administrators)) {
+    if ($maintenance && !in_array($userId, $administrators)) {
       header("Location: ./maintenance");
       die();
     }
@@ -29,12 +27,12 @@
     $sql = "SELECT * FROM `profiles` WHERE `user_id`=?";
     $statement = $connection->prepare($sql);
     $statement->bind_param("i", $userId);
-    $statement->execute() or die("An error occurred CSDB10"); // Code select database 10 double digits for distinction
+    $statement->execute() or die(word("error-occurred") . " CSDB10"); // Code select database 10 double digits for distinction
     $result = $statement->get_result();
     
     if ($result->num_rows == 0) {
         logout();
-        header("Location: $chatRoot"); // Redirects to /spiteful-chat/
+        header("Location: ./"); // Redirects to /spiteful-chat/
         die();
     }
     
@@ -42,7 +40,7 @@
     
     if ($row["token"] != $token) {
         logout();
-        header("Location: $chatRoot"); // Redirects to /spiteful-chat/
+        header("Location: ./"); // Redirects to /spiteful-chat/
         die();
     }
     
@@ -51,18 +49,18 @@
     
     if ($timeBetween > (TIME_HOUR * 8)) {
         logout();
-        header("Location: $chatRoot"); // Redirects to /spiteful-chat/
+        header("Location: ./"); // Redirects to /spiteful-chat/
         die();
     }
     
     $sql = "UPDATE `profiles` SET `last_active`=CURRENT_TIMESTAMP WHERE `user_id`=$userId";
-    $connection->query($sql) or die("An error occurred CULA1"); // Code update last active 1
+    $connection->query($sql) or die(word("error-occurred") . " CULA1"); // Code update last active 1
 
 ?>
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>Dashboard</title>
+		<title><?php echo word("dashboard");?></title>
 		<?php echo metaTags(2);?>
 		<link rel="stylesheet" href="<?php echo fileLink("assets/dashboard.css");?>">
 		<script src="https://kit.fontawesome.com/d6e7bd37b5.js" crossorigin="anonymous"></script>
@@ -72,7 +70,7 @@
 			<div class="main">
 				<div class="profiles-block">
 					<div class="newMsgBtnWrapper">
-						<button class="newMsgBtn" onclick="my.newChat()"><i class="fa-regular fa-pen-to-square"></i>&nbsp;New Message</button>
+						<button class="newMsgBtn" onclick="my.newChat()"><i class="fa-regular fa-pen-to-square"></i>&nbsp;<?php echo word("new-message");?></button>
 					</div>
 					<div class="profiles-list-wrapper">
 						<ul id="profiles-list"></ul>
@@ -107,7 +105,7 @@
 					<div class="messagesContainer" style="display: none;">
 						<div class="messages">
 							<div class="loader"></div>
-							<label>Loading Messages</label>
+							<label><?php echo word("loading-messages");?></label>
 						</div>
 					</div>
 					<div class="messageBar" style="display:none;">
@@ -116,18 +114,18 @@
 						<button class="sendBtn"><i class="fa-solid fa-arrow-right"></i></button>
 					</div>
 					<div class="no-profile-selection">
-						<p>Nothing to see here...</p>
+						<p><?php echo word("nothing-to-see");?></p>
 					</div>
 				</div>
 			</div>
 		</div>
 		<script src="<?php echo fileLink("node_modules/jquery/dist/jquery.min.js");?>"></script>
 		<script src="<?php echo fileLink("node_modules/sweetalert2/dist/sweetalert2.all.min.js");?>"></script>
-		<link rel="stylesheet" href="assets/swal-dark.css">
+		<link rel="stylesheet" href="<?php echo fileLink("assets/swal-dark.css");?>">
 		<script>
 			<?php if ($row["username"] === null) { ?>
 			  Swal.fire({
-			    title: "Choose a username!",
+			    title: "<?php echo word("pick-username");?>",
 			    input: "text",
 			    inputAttributes: {
 			      autocapitalize: "off",
@@ -141,12 +139,12 @@
 			    preConfirm: (username) => {
 			      if (username === "") {
 			        Swal.showValidationMessage(
-			          `Type something bro`
+			          `<?php echo word("blank-username");?>`
 			        )
 			      } else {
 			        if (RegExp(/[-!#@$%^&*()_+|~=`{}\[\]:";"<>?,.\\\/\s]/g).test(username)) {
 			          Swal.showValidationMessage(
-			            `Your username cannot contain special characters or spaces`
+			            `<?php echo word("invalid-username-characters");?>`
 			          )
 			        } else {
 			          return $.post("processes", {
@@ -174,13 +172,13 @@
 			    if (result.isConfirmed) {
 			      console.log(result.value)
 			      Toast.fire({
-			        title: `Welcome ${result.value.username}`,
+			        title: `<?php echo word("welcome,");?> ${result.value.username}`,
 			        icon: "success"
 			      })
 			    }
 			  })
 			<?php } ?>
 		</script>
-		<script src="assets/dashboard.js?<?php echo filemtime("assets/dashboard.js"); ?>"></script>
+		<script src="<?php echo fileLink("assets/dashboard.js");?>"></script>
 	</body>
 </html>

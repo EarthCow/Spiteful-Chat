@@ -331,7 +331,7 @@ let my = {
     modal() {
       Swal.fire({
         title: "Settings",
-        footer: "<a href=\"logout\" style=\"text-decoration:none\">Unset Session Vars</a>"
+        footer: "<a href=\"logout\" style=\"text-decoration:none\">Logout</a>"
       });
     },
 

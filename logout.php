@@ -1,7 +1,6 @@
 <?php
-// TMP FOR TESTING
-    session_start();
-    unset($_SESSION["id"]);
-    unset($_SESSION["token"]);
-    header("Location: ./");
+
+    require_once "./assets/configuration.php";
+    logout();
+    
 ?>
