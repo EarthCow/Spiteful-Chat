@@ -7,7 +7,7 @@
             $debug = false; // Enable PHP error_reporting
         }
         
-        $privateFolder = "/private/spiteful-chat"; // Private directory location from DOCUMENT_ROOT
+        $privateFolder = "/private/spiteful-chat"; // Private directory location from directory behind DOCUMENT_ROOT
         $composerFolder = "./vendor"; // PHP Composer Directory
         $nodeModulesFolder = "./node_modules"; // NPM Modules Directory
         $spiteSocketServerHost = "127.0.0.1"; // Spiteful Server Websocket Host
