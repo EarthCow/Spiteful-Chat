@@ -16,13 +16,13 @@
         define("TIME_DAY", 24 * 60 * 60);
         define("TIME_WEEK", 7 * 24 * 60 * 60);
         
-        $language = "es_ES"; // Language locale
-        /*$locale = locale_get_default(); // Language locale
+        $language = "en_US"; // Language locale
+        $locale = locale_get_default(); // Language locale
         if (($locale == "en_001") || ($locale == "en_150") || ($locale == "en_US_POSIX")) {
             $language = "en_US";
         } else {
             $language = locale_get_default();
-        }*/
+        }
         
         /*
             This requires PHP Locale class.
@@ -96,7 +96,8 @@
                 "\t<script src=\"//cdnjs.cloudflare.com/ajax/libs/html5shiv/r29/html5.min.js\"></script>",
                 "<![endif]-->",
                 "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1,shrink-to-fit=no\" />",
-                "<meta name=\"apple-mobile-web-app-capable\" content=\"yes\" />"
+                "<meta name=\"apple-mobile-web-app-capable\" content=\"yes\" />",
+                "<meta charset=\"utf-8\" />"
             ];
             foreach ($metaTags as $tag) {
                 for ($i = 0; $i < $tabs; $i++) {

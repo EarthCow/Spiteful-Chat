@@ -10,7 +10,7 @@
 
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?php echo $htmlLang;?>">
     <head>
         <title><?php echo word("spiteful-chat");?></title>
         <?php echo metaTags(2);?>

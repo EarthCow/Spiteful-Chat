@@ -64,7 +64,7 @@
                 $row = $result -> fetch_assoc();
                 
                 session_start([
-                    "cookie_lifetime" => $loginSessionLength, // 8 hours
+                    "cookie_lifetime" => $loginSessionLength,
                 ]);
                 $_SESSION["id"] = $row["user_id"];
                 $_SESSION["token"] = $token;

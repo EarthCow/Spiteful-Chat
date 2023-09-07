@@ -1,23 +1,31 @@
 
-/* custom code */
-
 /*
-pretty much just make stuff rounded
-and fix shadows overflowing
+    custom code
+    pretty much just make stuff rounded
+    and fix shadows overflowing
 */
 
 .profiles-block {
     border-radius: 12px;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
     user-select: none;
 }
 
 textarea::placeholder {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
     user-select: none;
 }
 
 .recipientBlock {
-   box-shadow: 0 5px 10px -2px rgb(0 0 0 / 35%) !important;
-   user-select: none;
+    box-shadow: 0 5px 10px -2px rgb(0 0 0 / 35%) !important;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
 .messages-block {
@@ -38,6 +46,9 @@ img {
 }
 
 .messageWrapper > img {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
     user-select: none;
 }
 

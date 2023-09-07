@@ -1,8 +1,23 @@
 'use strict';
 /* custom code p1 */
 // search "custom code" to see changes
+var $ = jQuery;
+var xmlhttp = new XMLHttpRequest();
+var translations;
+xmlhttp.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+        translations = JSON.parse(this.responseText);
+    }
+};
+xmlhttp.open("GET", "./assets/languages.php", true);
+xmlhttp.send();
+
+function word(word) {
+    return translations[word];
+}
+
 document.onmousemove = function () {
-    document.title = "Dashboard";
+    document.title = word("dashboard");
 };
 $(function() {
     // temp fix for long names
@@ -67,20 +82,22 @@ function openChat(user) {
     				}
     			}
     		})
-    		.catch(error => {
-    			Swal.fire(
-    				"Not Found",
-    				"@" + user + " not found.",
-    				"error"
-    			);
+    		.catch(e => {
+    			Swal.fire({
+    				title: word("not-found-title"),
+    				text: "@" + user + " " + word("not-found"),
+    				icon: "error",
+    				confirmButtonText: word("ok"),
+    			});
     		});
 	    }
 	} else {
-		Swal.fire(
-			"This is you!",
-			"You cannot message yourself.",
-			"info"
-		);
+		Swal.fire({
+			title: word("this-is-you"),
+			text: word("cannot-message-yourself"),
+			confirmButtonText: word("ok"),
+			icon: "info",
+		});
 	}
 }
 
@@ -101,9 +118,10 @@ let my = {
         if (!parsed.ok) {
           Toast.fire({
             icon: "error",
-            title: "Error",
-            text: parsed.statusText
-          })
+            title: word("error"),
+            text: parsed.statusText,
+            confirmButtonText: word("ok"),
+          });
           return;
         }
 
@@ -112,8 +130,8 @@ let my = {
         }
 
         // Hide the loading animation
-        $(".profiles-block .loader").hide()
-        $("#profiles-list").html("")
+        $(".profiles-block .loader").hide();
+        $("#profiles-list").html("");
 
         parsed.chats.forEach(chat => {
 
@@ -130,20 +148,20 @@ let my = {
               <span class="lastMsg"></span>
             </span>
           </div>
-        `)
+        `);
 
           // Will already be escaped html
           $element.find(".lastMsg").html(chat.last_message ?? "")
 
           $("#profiles-list").append($element)
 
-          let chatObj = new Chat(chat.username, chat.name, chat.picture, $element)
+          let chatObj = new Chat(chat.username, chat.name, chat.picture, $element);
 
-          chatObj.$element.on("click", () => chatObj.init())
+          chatObj.$element.on("click", () => chatObj.init());
 
           // Push the username to the array of all DMs
-          this.chats[chat.username] = chatObj
-        })
+          this.chats[chat.username] = chatObj;
+        });
 
       });
     } else 
@@ -152,7 +170,7 @@ let my = {
         data: "896"
       })
         .then(result => {
-          result = verifyResultJSON(result)
+          result = verifyResultJSON(result);
           if (result === false) {
             return;
           }
@@ -160,9 +178,10 @@ let my = {
           if (!result.ok) {
             Toast.fire({
               icon: "error",
-              title: "Error",
-              text: result.statusText
-            })
+              title: word("error"),
+              text: result.statusText,
+              confirmButtonText: word("ok"),
+            });
             return;
           }
 
@@ -171,8 +190,8 @@ let my = {
           }
 
           // Hide the loading animation
-          $(".profiles-block .loader").hide()
-          $("#profiles-list").html("")
+          $(".profiles-block .loader").hide();
+          $("#profiles-list").html("");
 
           result.chats.forEach(chat => {
 
@@ -189,36 +208,37 @@ let my = {
                 <span class="lastMsg"></span>
               </span>
             </div>
-          `)
+          `);
 
             // Will already be escaped html
-            $element.find(".lastMsg").html(((chat.last_message) ? chat.last_message : ""))
+            $element.find(".lastMsg").html(((chat.last_message) ? chat.last_message : ""));
 
-            $("#profiles-list").append($element)
+            $("#profiles-list").append($element);
 
-            let chatObj = new Chat(chat.username, chat.name, chat.picture, $element)
+            let chatObj = new Chat(chat.username, chat.name, chat.picture, $element);
 
-            chatObj.$element.on("click", () => chatObj.init())
+            chatObj.$element.on("click", () => chatObj.init());
 
             // Push the username to the array of all DMs
-            this.chats[chat.username] = chatObj
-          })
+            this.chats[chat.username] = chatObj;
+          });
 
         });
   },
 
   newChat() {
     Swal.fire({
-      title: "Who is the recipient?",
+      title: word("who-recipient"),
       input: 'text',
       inputAttributes: {
         autocapitalize: 'off',
         spellcheck: "false",
-        placeholder: "Username"
+        placeholder: word("username")
       },
       showCancelButton: true,
       reverseButtons: true,
-      confirmButtonText: 'Continue',
+      confirmButtonText: word("continue"),
+      cancelButtonText: word("cancel"),
       showLoaderOnConfirm: true,
       // do not want to return focus to the new message button
       returnFocus: false,
@@ -226,24 +246,25 @@ let my = {
         // check if the field is empty
         if (username === "") {
           Swal.showValidationMessage(
-            `Type something bro`
-          )
+            word("blank-username")
+          );
           return;
         }
         // check if the username is already in the list of chats
         if (my.chats[username]) {
           Toast.fire({
             icon: "info",
-            text: "you already have a conversation with @" + username
-          })
-          my.chats[username].init()
+            text: word("conversation-exists") + username,
+            confirmButtonText: word("ok"),
+          });
+          my.chats[username].init();
           return;
         }
         // verify the integrity of the entered username
-        if (RegExp(/[-!#@$%^&*()_+|~=`{}\[\]:";'<>?,.\\\/\s]/g).test(username)) {
+        if (new RegExp(/[-!#@$%^&*()_+|~=`{}\[\]:";'<>?,.\\\/\s]/g).test(username)) {
           Swal.showValidationMessage(
-            `Usernames cannot contain special characters or spaces`
-          )
+            word("invalid-username-characters-to")
+          );
           return;
         }
         // return the post request
@@ -254,38 +275,39 @@ let my = {
           .then(response => {
             if (response = verifyResultJSON(response)) {
               if (!response.ok) {
-                throw new Error(response.statusText)
+                throw new Error(response.statusText);
               }
-              response.username = username
-              return response
+              response.username = username;
+              return response;
             }
           })
           .catch(error => {
             Swal.showValidationMessage(
               error
-            )
-          })
+            );
+          });
       },
       backdrop: true,
       allowOutsideClick: () => !Swal.isLoading()
     })
       .then((result) => {
         if (!result.isConfirmed) {
-          console.log("not confirmed")
+          console.log(word("not-confirmed"));
           return;
         }
         if (typeof result.value != "object") {
-          console.log("not an object")
+          console.log(word("not-an-object"));
           return;
         }
-        let receiver = result.value.receiver.username
+        let receiver = result.value.receiver.username;
         if (result.value.alreadyExists) {
           Toast.fire({
             icon: "info",
-            title: "You already have a conversation with @" + receiver
-          })
-          my.chats[receiver].init()
-          console.log("already exists")
+            title: word("conversation-exists") + receiver,
+            confirmButtonText: word("ok"),
+          });
+          my.chats[receiver].init();
+          console.log(word("already-exists"));
           return;
         }
         // create the new chat
@@ -322,7 +344,8 @@ let my = {
   profile: {
     modal() {
       Swal.fire({
-        title: "Edit Profile"
+        title: word("edit-profile"),
+        confirmButtonText: word("ok"),
       });
     }
   },
@@ -330,8 +353,9 @@ let my = {
   settings: {
     modal() {
       Swal.fire({
-        title: "Settings",
-        footer: "<a href=\"logout\" style=\"text-decoration:none\">Logout</a>"
+        title: word("settings"),
+        footer: "<a href=\"logout\" style=\"text-decoration:none\">" + word("logout") + "</a>",
+        confirmButtonText: word("ok"),
       });
     },
 
@@ -366,7 +390,7 @@ class Chat {
           <video controls>
             <source src="${src}" type="${((type == "video/quicktime") ? "video/mp4" : type)}">
           </video>
-        `
+        `;
         break;
       default:
         // for any media (files) that are not listed above
@@ -380,7 +404,7 @@ class Chat {
             &nbsp;
             <a href="${src}&download"><i class="fa-solid fa-download"></i></a>
           </div>
-        `
+        `;
         break;
     }
 
@@ -389,44 +413,45 @@ class Chat {
         <img src="${((mine) ? my.picture : this.picture)}">
         <span>${spanContent}</span>
       </div>
-    `
+    `;
 
     if (append) {
-      $(".messages").append(msg)
+      $(".messages").append(msg);
       return;
     }
-    return msg
+    return msg;
   }
    getMessages(prepend = false) {
-    this.isGettingMessages = true
+    this.isGettingMessages = true;
     if (prepend) {
       $(".messages").prepend($(`
         <div class="loader"></div>
-        <label>Loading Messages</label>
-      `))
+        <label>${word("loading-messages")}</label>
+      `));
     }
-    console.log("Now loading section", this.msgSection)
+    console.log(word("now-loading-section"), this.msgSection);
     $.post("processes", {
       process: "getMessages",
       data: JSON.stringify([this.username, this.msgSection++])
     })
       .then(result => {
-        result = verifyResultJSON(result)
+        result = verifyResultJSON(result);
         if (result === false) {
           return;
         }
 
         // verify the result of the request
         if (!result.ok) {
-          Swal.fire(
-            "Error",
-            result.statusText,
-            "error"
-          )
+          Swal.fire({
+            title:word("error"),
+            text: result.statusText,
+            icon: "error",
+            confirmButtonText: word("ok"),
+          });
         }
 
         // set variable for the html messages to be iterated and appended to
-        let messageElements = ""
+        let messageElements = "";
         // run the iteration on each message
         result.messages.forEach(message => {
           // if the message doesn't have a subsequent type variable it is NOT media
@@ -448,45 +473,46 @@ class Chat {
                 <img src="${((message.mine) ? my.picture : this.picture)}">
                 <span>${convertedMsg}</span>
               </div>
-            `
+            `;
           } else {
             // this is used for messages that ARE media
-            messageElements += this.createMediaMsg(message.type, message.content, message.date, message.original, message.mine)
+            messageElements += this.createMediaMsg(message.type, message.content, message.date, message.original, message.mine);
           }
 
-          this.msgId++
+          this.msgId++;
         });
 
         if (prepend) {
-          $(".messages .loader ~ label, .messages .loader").remove()
-          $(".messages").prepend(messageElements)
+          $(".messages .loader ~ label, .messages .loader").remove();
+          $(".messages").prepend(messageElements);
         } else {
           // render the messages and remove the loader from .messages
-          $(".messages").html(messageElements)
+          $(".messages").html(messageElements);
         }
-        $(".messageWrapper span img, .messageWrapper span video").css("max-height", $(".messagesContainer").height())
+        $(".messageWrapper span img, .messageWrapper span video").css("max-height", $(".messagesContainer").height());
 
-        this.hasAllMessages = messageElements.length < 25
+        this.hasAllMessages = messageElements.length < 25;
 
-        this.isGettingMessages = false
+        this.isGettingMessages = false;
 
       }
-    )
+    );
   }
   init() {
     // verify the chat is in the array of chats
     if (!my.chats[this.username]) {
       Toast.fire({
         icon: "error",
-        title: "Error"
-      })
+        title:word("error"),
+        confirmButtonText: word("ok"),
+      });
       return;
     }
 
     // this is purely for the mobile version
     // on the mobile version the .profiles-list collapses whenever a chat is selected
     if ($(".profiles-block").css("position") == "absolute") {
-      $(".profiles-block").hide()
+      $(".profiles-block").hide();
     }
 
     // create the .message-block elements ---
@@ -494,58 +520,58 @@ class Chat {
     // add a the loader to .messages
     $(".messages").html(`
       <div class="loader"></div>
-      <label>Loading Messages</label>
-    `)
+      <label>${word("loading-messages")}</label>
+    `);
 
     if ($(".recipientBlock img").prop("src") != this.picture) {
 
-      $(".recipientBlock img").prop("src", this.picture)
-      $(".recipientBlock span").eq(0).text(this.name)
-      $(".recipientBlock span").eq(1).text("@" + this.username)
+      $(".recipientBlock img").prop("src", this.picture);
+      $(".recipientBlock span").eq(0).text(this.name);
+      $(".recipientBlock span").eq(1).text("@" + this.username);
 
       // set active dm
-      if ($(".active-dm")[0]) $(".active-dm").removeClass("active-dm")
-      this.$element.addClass("active-dm")
+      if ($(".active-dm")[0]) $(".active-dm").removeClass("active-dm");
+      this.$element.addClass("active-dm");
 
       // set listeners
 
-      let $msgBox = $(".msg")
+      let $msgBox = $(".msg");
 
-      $msgBox.off()
+      $msgBox.off();
 
-      $msgBox.on("keyup", function (e) {
-        fixMessageBoxHeight($msgBox)
-      })
+      $msgBox.on("keyup", function () {
+        fixMessageBoxHeight($msgBox);
+      });
       $msgBox.on("keydown", function (e) {
         // if the user presses enter without shift it will submit
         if (e.which == 13 && !e.shiftKey) {
           // prevent a new line from being inputed
-          e.preventDefault()
-          $msgBox.next().click()
+          e.preventDefault();
+          $msgBox.next().click();
         }
-      })
+      });
 
-      $(".sendBtn").off()
-      $(".sendBtn").on("click", () => this.message())
+      $(".sendBtn").off();
+      $(".sendBtn").on("click", () => this.message());
 
-      $(".mediaBtn").off()
-      $(".mediaBtn").on("click", () => upload(this))
+      $(".mediaBtn").off();
+      $(".mediaBtn").on("click", () => upload(this));
     }
 
     // hide the "nothing to see here" text
-    $(".no-profile-selection").hide()
+    $(".no-profile-selection").hide();
 
-    showMsgBlock()
+    showMsgBlock();
 
     setTimeout(function () {
-      $(".recipientBlock").show(400)
+      $(".recipientBlock").show(400);
       $(".messagesContainer").show(500, function () {
-        $(".messageWrapper span img, .messageWrapper span video").css("max-height", $(".messagesContainer").height())
-      })
-      $(".messageBar").show(400)
-    }, 500)
+        $(".messageWrapper span img, .messageWrapper span video").css("max-height", $(".messagesContainer").height());
+      });
+      $(".messageBar").show(400);
+    }, 500);
 
-    $(".msg").focus()
+    $(".msg").focus();
 
     // initiate the request for the messages
     this.msgSection = 1;
@@ -558,32 +584,37 @@ class Chat {
     if (this.isSending) {
       Toast.fire({
         icon: "info",
-        text: "wait til your previous message sends"
-      })
+        text: word("wait-message-sending"),
+        confirmButtonText: word("ok"),
+      });
       return;
     }
 
     // define the textarea with the message and the content (the message itself)
-    let $msgBox = $(".msg"), message = $msgBox.val()
+    let $msgBox = $(".msg"), message = $msgBox.val();
     if (message === "") {
       // will not send an empty message
-      Toast.fire({ icon: "info", text: "You can't send an empty message" })
+      Toast.fire({ 
+          icon: "info", 
+          text: word("empty-message"),
+          confirmButtonText: word("ok"),
+          });
       return;
     }
 
     // clears the textarea of content and fixes its height
-    $msgBox.val("")
-    fixMessageBoxHeight($msgBox)
+    $msgBox.val("");
+    fixMessageBoxHeight($msgBox);
 
 
-    let $newMsg = $(document.createElement("div"))
-    $newMsg[0].className = "messageWrapper myMessage"
-    $newMsg.css("opacity", .5)
+    let $newMsg = $(document.createElement("div"));
+    $newMsg[0].className = "messageWrapper myMessage";
+    $newMsg.css("opacity", 0.5);
 
     $newMsg.append(`
       <img src="${my.picture}">
       <span></span>
-    `)
+    `);
 
     // ensures shift enter whitespace is html compliant
     /*
@@ -596,22 +627,22 @@ class Chat {
         $newMsg.find("span").html(escapeHtml(message).replaceAll("\n", "<br>"))
     */
     /* END CC */
-    $newMsg.find("span").html(visualMsg)
+    $newMsg.find("span").html(visualMsg);
 
     // appends the new message to the .messages div
-    $(".messages").append($newMsg)
+    $(".messages").append($newMsg);
 
     // move dm to the top of the list
     if (!this.$element.is(":first-child")) {
-      this.$element.prependTo("#profiles-list")
+      this.$element.prependTo("#profiles-list");
     }
 
     // set last message
-    let $lastMsgSpan = this.$element.find(".lastMsg")
-    $lastMsgSpan.addClass("mute italic").text("Sending")
+    let $lastMsgSpan = this.$element.find(".lastMsg");
+    $lastMsgSpan.addClass("mute italic").text(word("sending"));
 
     // sets isSending to true before sending the message
-    this.isSending = true
+    this.isSending = true;
     // if the socket is open then we send through the socket but if it's not then the message gets sent post like normal
     if (my.socket.available()) {
       my.socket.send("M", [this.username, {
@@ -619,22 +650,26 @@ class Chat {
         content: message,
       }], (result) => {
           // resets the isSending to false
-          this.isSending = false
+          this.isSending = false;
 
           // set last message
-          $lastMsgSpan.removeClass("mute italic").html("&nbsp;")
+          $lastMsgSpan.removeClass("mute italic").html("&nbsp;");
 
           if (result.ok) {
             // set last message - this one can use .text() because it is not already escaped :)
-            $lastMsgSpan.text(message)
+            $lastMsgSpan.text(message);
             // if the message sent it changes the transparency of the message element in the .messages div
-            $newMsg.css("opacity", 1)
+            $newMsg.css("opacity", 1);
           } else {
             // if the message failed to send it fires an error toast
-            Toast.fire({ icon: "error", title: result.statusText })
+            Toast.fire({
+                icon: "error",
+                title: result.statusText,
+                confirmButtonText: word("ok"),
+            });
           }
-          this.msgId++
-        })
+          this.msgId++;
+        });
     } else {
       $.post("processes", {
         process: "sendMessage",
@@ -642,30 +677,34 @@ class Chat {
       })
       .then((result) => {
         // resets the isSending to false
-        this.isSending = false
+        this.isSending = false;
   
         // set last message
-        $lastMsgSpan.removeClass("mute italic").html("&nbsp;")
+        $lastMsgSpan.removeClass("mute italic").html("&nbsp;");
   
         // verify the result is indeed json and sets the result to the json value
         if (result = verifyResultJSON(result)) {
           if (result.ok) {
             // set last message
-            $lastMsgSpan.text(message)
+            $lastMsgSpan.text(message);
             // if the message sent it changes the transparency of the message element in the .messages div
-            $newMsg.css("opacity", 1)
+            $newMsg.css("opacity", 1);
           } else {
             // if the message failed to send it fires an error toast
-            Toast.fire({ icon: "error", text: result.statusText })
+            Toast.fire({
+                icon: "error",
+                text: result.statusText,
+                confirmButtonText: word("ok"),
+            });
           }
-          this.msgId++
+          this.msgId++;
         }
-      })
+      });
     }
   }
   receive(message) {
     let $newMsg;
-    let $lastMsgSpan = this.$element.find(".lastMsg")
+    let $lastMsgSpan = this.$element.find(".lastMsg");
     // if the message doesn't have a subsequent type variable it is NOT media
     if (!message.type) {
       // generate the html text message
@@ -675,7 +714,7 @@ class Chat {
             THIS IS FOR WHEN MESSAGES ARE RECIEVED
         */
         var visualMsg = convertHandle(convertUri(message.content.replaceAll("\n", "<br>")));
-        document.title = "💬 Dashboard"
+        document.title = "💬 " + word("dashboard");
         /* was:
             <span>${message.content.replaceAll("\n", "<br>")}</span>
         */
@@ -690,40 +729,41 @@ class Chat {
       $lastMsgSpan.html(message.content);
     } else {
       // this is used for messages that ARE media
-      $newMsg = $(this.createMediaMsg(message.type, message.src, message.date, message.original, false))
+      $newMsg = $(this.createMediaMsg(message.type, message.src, message.date, message.original, false));
       // set last message
-      $lastMsgSpan.html(message.original)
+      $lastMsgSpan.html(message.original);
     }
 
     // move dm to the top of the list
     if (!this.$element.is(":first-child")) {
-      this.$element.prependTo("#profiles-list")
+      this.$element.prependTo("#profiles-list");
     }
 
     if (my.openChat === null || my.openChat.username != this.username) return;
 
     // render the messages and remove the loader from .messages
     $(".messages").append($newMsg);
-    $(".messageWrapper span img, .messageWrapper span video").css("max-height", $(".messagesContainer").height())
+    $(".messageWrapper span img, .messageWrapper span video").css("max-height", $(".messagesContainer").height());
   }
 }
 
 function upload(chat) {
-  let $status, $innerBar
+  let $status, $innerBar;
   function byteConverter(bytes) {
     var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-    if (bytes == 0) return 'n/a';
+    if (bytes === 0) return 'n/a';
     var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
-    if (i == 0) return bytes + ' ' + sizes[i];
+    if (i === 0) return bytes + ' ' + sizes[i];
     return (bytes / Math.pow(1024, i)).toFixed(1) + ' ' + sizes[i];
   }
   function modal() {
     Swal.fire({
       title: 'Upload',
+      confirmButtonText: word("upload-and-send"),
 
       html: `
       <div class="uploadField" id='uploaderDiv' onclick="$('#fileInput').click();">
-        <p id="uploadBoxP">Click here or drag and drop</p>
+        <p id="uploadBoxP">${word("click-here-or-drag-drop")}</p>
       </div>
       <form style='display:none;' class='uploadForm' method='post' enctype='multipart/form-data'>
         <input style='display:none;' type='file' id='fileInput'>
@@ -732,33 +772,32 @@ function upload(chat) {
 
       didOpen: () => {
         $("#fileInput").on("change", function () {
-          let file = this.files[0]
-          $("#uploadBoxP").html(((file) ? `${file.name}<br><span style="color:orange">${byteConverter(file.size)}</span>` : "Click here or drag and drop"))
-        })
+          let file = this.files[0];
+          $("#uploadBoxP").html(((file) ? `${file.name}<br><span style="color:orange">${byteConverter(file.size)}</span>` : word("click-here-or-drag-drop")));
+        });
       },
 
       showCancelButton: true,
       reverseButtons: true,
       allowEscapeKey: () => !Swal.isLoading(),
-      confirmButtonText: 'Upload and Send',
       showLoaderOnConfirm: true,
       preConfirm: () => {
-        let file = $("#fileInput")[0].files[0]
+        let file = $("#fileInput")[0].files[0];
         if (!file) {
           Swal.showValidationMessage(
-            `gotta select somethin my boy`
-          )
+            word("select-file")
+          );
           return;
         }
 
-        send(file)
+        send(file);
 
         // prevents popup from closing
-        return false
+        return false;
       },
       backdrop: true,
       allowOutsideClick: () => !Swal.isLoading()
-    })
+    });
   }
   function send(file) {
     let newUploadDiv = document.createElement('div');
@@ -772,101 +811,107 @@ function upload(chat) {
         <div id="outerBar" class="outerBar">
           <div id="innerBar" class="innerBar"></div>
         </div>
-        <div id="status" class="status">waiting...</div>
+        <div id="status" class="status">${word("waiting")}</div>
       </div>
-    `
-    $(Swal.getHtmlContainer()).html(newUploadDiv)
-    $innerBar = $("#innerBar")
-    $status = $("#status")
+    `;
+    $(Swal.getHtmlContainer()).html(newUploadDiv);
+    $innerBar = $("#innerBar");
+    $status = $("#status");
 
-    var formdata = new FormData()
-    formdata.append("file", file)
-    formdata.append("data", chat.username)
-    formdata.append("process", "sendFile")
+    var formdata = new FormData();
+    formdata.append("file", file);
+    formdata.append("data", chat.username);
+    formdata.append("process", "sendFile");
 
-    var ajax = new XMLHttpRequest()
-    ajax.upload.addEventListener("progress", progressHandler, false)
-    ajax.addEventListener("load", completeHandler, false)
-    ajax.addEventListener("error", errorHandler, false)
-    ajax.addEventListener("abort", abortHandler, false)
-    ajax.onerror = function (e) {
-      Swal.fire(
-        "Error",
-        "A network error has occurred. Some services may be unavailable.",
-        "error"
-      )
-    }
-    ajax.open("POST", "processes")
-    ajax.send(formdata)
+    var ajax = new XMLHttpRequest();
+    ajax.upload.addEventListener("progress", progressHandler, false);
+    ajax.addEventListener("load", completeHandler, false);
+    ajax.addEventListener("error", errorHandler, false);
+    ajax.addEventListener("abort", abortHandler, false);
+    ajax.onerror = function () {
+      Swal.fire({
+        title:word("error"),
+        confirmButtonText: word("ok"),
+        text:word("network-error"),
+        icon:"error"
+      });
+    };
+    ajax.open("POST", "processes");
+    ajax.send(formdata);
   }
   function progressHandler(event) {
-    $("#bytes").html(`Uploaded ${byteConverter(event.loaded)}/${byteConverter(event.total)}`)
+    $("#bytes").html(`Uploaded ${byteConverter(event.loaded)}/${byteConverter(event.total)}`);
 
-    var percent = Math.round((event.loaded / event.total) * 100)
+    var percent = Math.round((event.loaded / event.total) * 100);
 
-    $innerBar.animate({ "width": percent + "%" }, .15)
-    $innerBar.html(percent + "%")
+    $innerBar.animate({ "width": percent + "%" }, 0.15);
+    $innerBar.html(percent + "%");
 
     if (percent == 100) {
-      $status.css({ fontWeight: "bold", textDecoration: "underline" })
-      $status.html("Finalizing, please wait just a little longer...")
+      $status.css({ fontWeight: "bold", textDecoration: "underline" });
+      $status.html(word("finalizing"));
     } else {
-      $status.html(percent + "% uploaded... please wait");
+      $status.html(percent + word("uploaded-progress"));
     }
   }
   function completeHandler(event) {
-    let result = event.target.responseText
-    console.log(result)
+    let result = event.target.responseText;
+    console.log(result);
 
-    result = verifyResultJSON(result)
+    result = verifyResultJSON(result);
 
     if (!result) {
-      Swal.fire(
-        "Error",
-        "Failed to send file",
-        "error"
-      )
+      Swal.fire({
+        title:word("error"),
+        text:word("failed-to-send-file"),
+        icon:"error",
+        confirmButtonText: word("ok"),
+    });
       return;
     }
     if (!result.ok) {
-      Swal.fire(
-        "Error",
-        result.statusText,
-        "error"
-      )
+      Swal.fire({
+        title:word("error"),
+        text:result.statusText,
+        icon:"error",
+        confirmButtonText: word("ok"),
+    });
       return;
     }
     Toast.fire({
-      title: "Successfully sent file",
-      icon: "success"
-    })
+      title: word("successfully-sent-file"),
+      icon: "success",
+      confirmButtonText: word("ok"),
+    });
 
-    my.socket.send("M", [chat.username, result])
+    my.socket.send("M", [chat.username, result]);
 
-    chat.createMediaMsg(result.type, result.src, result.date, result.original, true, true)
-    chat.$element.find(".lastMsg").text(result.lastMsg)
+    chat.createMediaMsg(result.type, result.src, result.date, result.original, true, true);
+    chat.$element.find(".lastMsg").text(result.lastMsg);
     // move dm to the top of the list
     if (!chat.$element.is(":first-child")) {
-      chat.$element.prependTo("#profiles-list")
+      chat.$element.prependTo("#profiles-list");
     }
-    chat.msgId++
+    chat.msgId++;
   }
-  function errorHandler(event) {
-    Swal.fire(
-      "Error",
-      "Failed to send file",
-      "error"
-    )
+  function errorHandler() {
+    Swal.fire({
+      title:word("error"),
+      text:word("failed-to-send-file"),
+      icon:"error",
+      confirmButtonText: word("ok"),
+  });
   }
-  function abortHandler(event) {
-    Swal.fire(
-      "Error",
-      "Failed to send file",
-      "error"
-    )
+  function abortHandler() {
+    Swal.fire({
+      title:word("error"),
+      text:word("failed-to-send-file"),
+      icon:"error",
+      confirmButtonText: word("ok"),
+  });
   }
 
-  modal()
+  modal();
 }
 
 const Toast = Swal.mixin({
@@ -876,46 +921,47 @@ const Toast = Swal.mixin({
   timer: 3000,
   timerProgressBar: true,
   didOpen: (toast) => {
-    toast.addEventListener('mouseenter', Swal.stopTimer)
-    toast.addEventListener('mouseleave', Swal.resumeTimer)
+    toast.addEventListener('mouseenter', Swal.stopTimer);
+    toast.addEventListener('mouseleave', Swal.resumeTimer);
   }
-})
+});
 
 function verifyResultJSON(result) {
-  let parsed
+  let parsed;
   try {
-    parsed = JSON.parse(result)
+    parsed = JSON.parse(result);
   }
   catch (error) {
-    console.log(error)
+    console.log(error);
     if (result == "SESS") {
-      Swal.fire(
-        "Info",
-        "Your session has expired you will be reloaded momentarily",
-        "info"
-      )
+      Swal.fire({
+        title:word("info"),
+        text:word("session-expired"),
+        icon:"info",
+        confirmButtonText: word("ok"),
+    });
       setTimeout(() => {
-        window.location.reload()
+        window.location.reload();
       }, 3000);
     } else {
       Swal.fire({
-        title: "Error",
-        text: "Error code: " + result,
+        title: word("error"),
+        text: word("error-code") + " " + result,
         icon: "error",
         timer: 5000,
-        timerProgressBar: true
+        timerProgressBar: true,
       }).then(function () {
         // window.location.reload()
-      })
+      });
     }
-    return false
+    return false;
   }
-  return parsed
+  return parsed;
 }
 
 function receiveMessage(msg) {
   const parsed = verifyResultJSON(msg.data);
-  console.log("MSG: ", parsed);
+  console.log(word("message") + ": ", parsed);
 
   if (!parsed.ok) {
     console.warn(parsed.statusText);
@@ -957,16 +1003,16 @@ function receiveMessage(msg) {
             <span class="lastMsg"></span>
           </span>
         </div>
-      `)
+      `);
 
-        $("#profiles-list").prepend($element)
+        $("#profiles-list").prepend($element);
 
-        let chatObj = new Chat(parsed.sender, parsed.info.name, parsed.info.picture, $element)
+        let chatObj = new Chat(parsed.sender, parsed.info.name, parsed.info.picture, $element);
 
-        chatObj.$element.on("click", () => chatObj.init())
+        chatObj.$element.on("click", () => chatObj.init());
 
         // Push the username to the array of all DMs
-        my.chats[parsed.sender] = chatObj
+        my.chats[parsed.sender] = chatObj;
         my.chats[parsed.sender].receive(parsed.message);
     }
   }
@@ -987,17 +1033,17 @@ class MyWebSocket {
     const host = "wss://" + window.location.hostname + "/_ws_/" + this.credentials;
     try {
       this.socket = new WebSocket(host);
-      this.socket.onopen = (msg) => {
+      this.socket.onopen = () => {
         this.connectionAttempts = 0;
         my.getChats();
-        console.log("WEBSOCKET CONNECTED");
-        this.recurringPing = setInterval(()=>{this.send("P", "Ping!")}, 4000);
+        console.log(word("websocket-connected"));
+        this.recurringPing = setInterval(()=>{this.send("P", word("ping"))}, 4000);
       };
       this.socket.onmessage = receiveMessage;
-      this.socket.onclose = (msg) => {
+      this.socket.onclose = () => {
         if (this.connectionAttempts === 0) my.getChats();
         clearInterval(this.recurringPing);
-        console.warn("WEBSOCKET DISCONNECTED");
+        console.warn(word("websocket-disconnected"));
         this.reconnect();
       };
     }
@@ -1020,21 +1066,26 @@ class MyWebSocket {
     if (this.socket.readyState != this.socket.CLOSED) return;
     if (document.visibilityState !== 'visible') return;
     if (this.connectionAttempts++ > 1) {
-      Toast.fire({ title: "Disconnected! Attempting to reconnect...", icon: "info", didOpen: () => Swal.showLoading() });
+      Toast.fire({
+          title: word("disconnected-reconnect"),
+          icon: "info",
+          didOpen: () => Swal.showLoading()
+          
+      });
       setTimeout(() => {
-        console.log("Attempting to reconnect");
-        this.init()
-      }, 5000)
+        console.log(word("disconnected-reconnect"));
+        this.init();
+      }, 5000);
       return;
     }
-    console.log("Attempting to reconnect");
-    this.init()
+    console.log(word("disconnected-reconnect"));
+    this.init();
   }
 
 }
 
 $(function () {
-  $(".main").css("transform", "scale(1)")
+  $(".main").css("transform", "scale(1)");
 
   document.addEventListener("visibilitychange", function () {
     if (document.visibilityState === 'visible') {
@@ -1046,7 +1097,7 @@ $(function () {
     const parsed = verifyResultJSON(result);
     my.socket = new MyWebSocket(`${parsed.id}.${parsed.token}`);
     my.socket.init();
-  })
+  });
     // Message container scroll
   $(".messagesContainer").scroll(function() {
     if (my.openChat.hasAllMessages) return;
@@ -1054,20 +1105,20 @@ $(function () {
       my.openChat.getMessages(true);
     }
   });
-})
+});
 
-window.onresize = function (event) {
-  $(".messageWrapper span img, .messageWrapper span video").css("max-height", $(".messagesContainer").height())
-}
+window.onresize = function () {
+  $(".messageWrapper span img, .messageWrapper span video").css("max-height", $(".messagesContainer").height());
+};
 
 function actallyHideMsgBlock() {
-  $(".profiles-block").width("calc(250px + 50vw)")
-  $(".messages-block").css({ "min-width": "unset", "width": 0, "opacity": 0 })
+  $(".profiles-block").width("calc(250px + 50vw)");
+  $(".messages-block").css({ "min-width": "unset", "width": 0, "opacity": 0 });
 }
 
 function showMsgBlock() {
-  $(".profiles-block").width(250)
-  $(".messages-block").css({ "width": "50vw", "opacity": 1 })
+  $(".profiles-block").width(250);
+  $(".messages-block").css({ "width": "50vw", "opacity": 1 });
   // need to add min width somewhere
 }
 
@@ -1076,21 +1127,21 @@ function fixMessageBoxHeight(msgBox) {
   msgBox[0].style.height = ((msgBox[0].scrollHeight > 1000) ? 1000 : msgBox[0].scrollHeight + 1) + "px";
 
   if ((msgBox[0].scrollHeight - 10) > msgBox.outerHeight()) {
-    msgBox.css("overflow-y", "scroll")
-  } else msgBox.css("overflow-y", "hidden")
+    msgBox.css("overflow-y", "scroll");
+  } else msgBox.css("overflow-y", "hidden");
 }
 
 const escapeHtml = (unsafe) => {
   return unsafe.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;');
-}
+};
 
 function showProfileList() {
-  $(".profiles-block").show()
+  $(".profiles-block").show();
 }
 
-function previewMedia(type, src) {
-
-}
+//function previewMedia(type, src) {
+//
+//}
 
 function adminRequest(request = "clear", data = 896) {
   $.post("processes", {
@@ -1098,6 +1149,6 @@ function adminRequest(request = "clear", data = 896) {
     data: JSON.stringify({ request: request, data: data })
   })
     .then(function (result) {
-      console.log(result)
-    })
+      console.log(result);
+    });
 }

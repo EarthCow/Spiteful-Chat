@@ -266,7 +266,7 @@
                     unset($currentUser);
                     break;
                 case "P":
-                    $this->respond($user, "Pong!", true);
+                    $this->respond($user, word("pong"), true);
                     break;
                 default:
                     $response["statusText"] = word("invalid-instruction");

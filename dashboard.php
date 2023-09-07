@@ -58,7 +58,7 @@
 
 ?>
 <!DOCTYPE html>
-<html>
+<html lang="<?php echo $htmlLang;?>">
 	<head>
 		<title><?php echo word("dashboard");?></title>
 		<?php echo metaTags(2);?>
