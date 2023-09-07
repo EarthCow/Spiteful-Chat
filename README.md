@@ -46,14 +46,18 @@ ProxyPassReverse /_ws_/ ws://127.0.0.1:12345
 ```
 For a **Nginx** setup
 ```
-location ~ /_ws_/* {
-  rewrite ^/_ws_/(.*)$ /$1 break;
-  proxy_pass http://127.0.0.1:12345;
-  proxy_http_version 1.1;
-  proxy_set_header Upgrade $http_upgrade;
-  proxy_set_header Connection 'upgrade';
-  proxy_set_header Host $host;
-  proxy_cache_bypass $http_upgrade;
+server {
+  ...
+    location ~ /_ws_/* {
+      rewrite ^/_ws_/(.*)$ /$1 break;
+      proxy_pass http://127.0.0.1:12345;
+      proxy_http_version 1.1;
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection 'upgrade';
+      proxy_set_header Host $host;
+      proxy_cache_bypass $http_upgrade;
+    }
+  ...
 }
 ```
 Get more information about this configuration [here](https://httpd.apache.org/docs/2.4/mod/mod_proxy_wstunnel.html) for Apache or [here](https://www.nginx.com/blog/websocket-nginx/) for Nginx
