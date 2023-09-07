@@ -12,7 +12,18 @@
             they must first access this file.
         
     */
+    
     $words = array (
+        
+        // Language List
+        
+        "supported-languages-list" => array ( // Show these to the user. These are all supported languages. Will default to English if not found.
+            "en_US",
+            "es_ES",
+            "de_DE",
+        ),
+        
+        // End Language List
         
         "spiteful-chat" => array (
             // Capitalized Title
@@ -552,6 +563,17 @@
         "sending",
         "settings",
     ];
+    
+    if (!isset($language)) {
+        $language = locale_get_default();
+        if (($language == "en_001") || ($language == "en_150") || ($language == "en_US_POSIX")) {
+            $language = "en_US";
+        }
+    }
+    
+    if(!in_array($language, $words["supported-languages-list"])) {
+        $language = "en_US";
+    }
 
     if (basename(__FILE__) != basename($_SERVER["SCRIPT_FILENAME"])) {
         
@@ -570,6 +592,9 @@
         
     } else {
         require("../assets/configuration.php");
+        if(!in_array($language, $words["supported-languages-list"])) {
+            $language = "en_US";
+        }
         $public = array ();
         foreach ($publicWords as $word) {
             $public[$word] = $words[$word][$language];
