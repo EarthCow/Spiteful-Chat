@@ -517,6 +517,36 @@
             "de_DE" => "Einstellungen",
         ),
         
+        "invalid-data" => array (
+            "en_US" => "Invalid data received!",
+            "es_ES" => "¡Datos no válidos recibidos!",
+            "de_DE" => "Ungültige Daten erhalten!",
+        ),
+        
+        "client-disconnected" => array (
+            "en_US" => "Client disconnected. TCP connection lost:",
+            "es_ES" => "Cliente desconectado. Conexión TCP perdida:",
+            "de_DE" => "Client getrennt. TCP-Verbindung verloren:",
+        ),
+        
+        "socket-error" => array (
+            "en_US" => "Socket error:",
+            "es_ES" => "Error de socket:",
+            "de_DE" => "Socket-Fehler:",
+        ),
+        
+        "unusual-disconnect" => array (
+            "en_US" => "Unusual disconnect on socket",
+            "es_ES" => "Desconexión inusual en el socket",
+            "de_DE" => "Ungewöhnliche Trennung am Socket",
+        ),
+        
+        "failed" => array (
+            "en_US" => "Failed",
+            "es_ES" => "Fallido",
+            "de_DE" => "Fehlgeschlagen",
+        ),
+        
     );
     
     $publicWords = [

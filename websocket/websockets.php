@@ -11,7 +11,7 @@
     
     abstract class WebSocketServer
     {
-        protected $userClass = "WebSocketUser"; // redefine this if you want a custom user class.  The custom user class should inherit from WebSocketUser.
+        protected $userClass = "WebSocketUser"; // Redefine this if you want a custom user class.  The custom user class should inherit from WebSocketUser.
         protected $maxBufferSize;
         protected $master;
         protected $sockets = [];
@@ -26,12 +26,12 @@
         {
             $this->maxBufferSize = $bufferLength;
             ($this->master = socket_create(AF_INET, SOCK_STREAM, SOL_TCP)) or
-                die("Failed: socket_create()");
+                die(word("failed") . ": socket_create()");
             socket_set_option($this->master, SOL_SOCKET, SO_REUSEADDR, 1) or
                 die("Failed: socket_option()");
             socket_bind($this->master, $addr, $port) or
                 die("Failed: socket_bind()");
-            socket_listen($this->master, 20) or die("Failed: socket_listen()");
+            socket_listen($this->master, 20) or die(word("failed") . ": socket_listen()");
             $this->sockets["m"] = $this->master;
             $this->stdout(
                 "\033[36m[i] \033[39m" . word("server-listening-on") . " " .
@@ -125,7 +125,7 @@
                     if ($socket === $this->master) {
                         $client = socket_accept($socket);
                         if ($client === false) {
-                            $this->stderr("\033[31m[!] \033[39mFailed: socket_accept()");
+                            $this->stderr("\033[31m[!] \033[39m" . word("failed") . ": socket_accept()");
                             continue;
                         } else {
                             $this->connect($client);
@@ -152,21 +152,21 @@
                                 case 121: // EREMOTEIO    -- Rempte I/O error -- Their hard drive just blew up.
                                 case 125: // ECANCELED    -- Operation canceled
                                     $this->stderr(
-                                        "\033[31m[!] \033[39mUnusual disconnect on socket " .
+                                        "\033[31m[!] \033[39m" . word("unusual-disconnect") . " " .
                                             strval(spl_object_id($socket))
                                     );
                                     $this->disconnect($socket, true, $sockErrNo); // disconnect before clearing error, in case someone with their own implementation wants to check for error conditions on the socket.
                                     break;
                                 default:
                                     $this->stderr(
-                                        "\033[31m[!] \033[39mSocket error: " .
+                                        "\033[31m[!] \033[39m" . word("socket-error") . " " .
                                             socket_strerror($sockErrNo)
                                     );
                             }
                         } elseif ($numBytes == 0) {
                             $this->disconnect($socket);
                             $this->stderr(
-                                "\033[31m[!] \033[39mClient disconnected. TCP connection lost: " .
+                                "\033[31m[!] \033[39m" . word("client-disconnected") . " " .
                                     strval(spl_object_id($socket))
                             );
                         } else {

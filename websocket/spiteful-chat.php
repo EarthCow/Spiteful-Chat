@@ -53,7 +53,7 @@
             try {
                 $parsedMsg = json_decode($message, true);
             } catch (\Throwable $th) {
-                $this->respond($user, "Invalid data received!");
+                $this->respond($user, word("invalid-data"));
                 return;
             }
             
