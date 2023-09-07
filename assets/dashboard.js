@@ -1,4 +1,9 @@
 'use strict';
+/* custom code */
+document.onmousemove = function () {
+    document.title = "Dashboard";
+};
+
 let my = {
   username: $("#myUsername").text().replace("@", ""),
   name: $("#myName").text(),
@@ -360,7 +365,7 @@ class Chat {
             /* was:
             <span>${message.content.replaceAll("\n", "<br>")}</span>
             */
-            /* END CUSTOM CODE */
+            /* END CC */
             messageElements += `
               <div class="messageWrapper${((message.mine) ? " myMessage" : "")}" title="${message.date}">
                 <img src="${((message.mine) ? my.picture : this.picture)}">
@@ -519,7 +524,7 @@ class Chat {
     /* was:
         $newMsg.find("span").html(escapeHtml(message).replaceAll("\n", "<br>"))
     */
-    /* END CUSTOM CODE */
+    /* END CC */
     $newMsg.find("span").html(visualMsg)
 
     // appends the new message to the .messages div
@@ -605,10 +610,11 @@ class Chat {
             return ctext.replace(exp2, "$1<a target=\"_blank\" style=\"text-decoration:none\" href=\"https://$2\">$2</a>");
         }
         var visualMsg = convert(message.content.replaceAll("\n", "<br>"));
+        document.title = "💬 Dashboard"
         /* was:
             <span>${message.content.replaceAll("\n", "<br>")}</span>
         */
-        /* END CUSTOM CODE */
+        /* END CC */
       $newMsg = $(`
         <div class="messageWrapper" title="${message.date}">
           <img src="${this.picture}">
