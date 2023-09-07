@@ -91,9 +91,9 @@
         ),
         
         "chat-self-error" => array (
-            "en_US" => "Fucking dumbass no you cannot message yourself lonely ass",
-            "es_ES" => "Maldito tonto, no puedes enviarte un mensaje, pobre desgraciado",
-            "de_DE" => "Verdammter Idiot, du kannst dir keine Nachricht schicken, einsamer Arsch",
+            "en_US" => "You cannot message yourself",
+            "es_ES" => "No puedes enviarte mensajes a ti mismo",
+            "de_DE" => "Sie können sich keine Nachrichten senden",
         ),
         
         "conversation-creation-fail" => array (
@@ -109,9 +109,9 @@
         ),
         
         "invalid-request" => array (
-            "en_US" => "Invalid request :(",
-            "es_ES" => "Solicitud no válida :(",
-            "de_DE" => "Ungültige Anfrage :(",
+            "en_US" => "Invalid request",
+            "es_ES" => "Solicitud no válida",
+            "de_DE" => "Ungültige Anfrage",
         ),
         
         "cannot-find-user" => array (
@@ -124,7 +124,7 @@
             // May be temporary
             "en_US" => "nuts",
             "es_ES" => "nueces",
-            "de_DE" => "Nüsse",
+            "de_DE" => "nüsse",
         ),
         
         "rename-taken" => array (
@@ -211,7 +211,7 @@
         "dashboard" => array (
             "en_US" => "Dashboard",
             "es_ES" => "Tablero",
-            "de_DE" => "Dashboard",
+            "de_DE" => "Armaturenbrett",
         ),
         
         "new-message" => array (
@@ -263,10 +263,11 @@
             "de_DE" => "Ungültige Anweisung empfangen!",
         ),
         
-        // Not sure if a different translation will cause issues. Spanish is same since it is an onomatopoeia.
+        // Not sure if a different translation will cause issues.
+        // Other languages are the same since it is an onomatopoeia.
         "pong" => array (
             "en_US" => "Pong!",
-            "es_ES" => "Pong!",
+            "es_ES" => "¡Pong!",
             "de_DE" => "Pong!",
         ),
         

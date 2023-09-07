@@ -16,7 +16,7 @@
         define("TIME_DAY", 24 * 60 * 60);
         define("TIME_WEEK", 7 * 24 * 60 * 60);
         
-        $language = "en_US"; // Explicitly set language locale. Remove or comment out to auto detect.
+        // $language = "en_US"; // Explicitly set language locale. Remove or comment out to auto detect.
         
         /*
             This requires PHP Locale class.
