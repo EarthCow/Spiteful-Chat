@@ -1,3 +1,61 @@
+
+/* custom code */
+
+/*
+pretty much just make stuff rounded
+and fix shadows overflowing
+*/
+
+.profiles-block {
+    border-radius: 12px;
+    user-select: none;
+}
+
+textarea::placeholder {
+    user-select: none;
+}
+
+.recipientBlock {
+   box-shadow: 0 5px 10px -2px rgb(0 0 0 / 35%) !important;
+   user-select: none;
+}
+
+.messages-block {
+    border-radius: 0 12px 12px 0;
+}
+
+
+.messageBar {
+    box-shadow:  0 -5px 10px -5px rgb(0 0 0 / 35%) !important;
+}
+
+img {
+    pointer-events: none;
+}
+
+.messageWrapper span img {
+    pointer-events: auto !important;
+}
+
+.messageWrapper > img {
+    user-select: none;
+}
+
+/* end custom code */
+
+/*the scrollbar track goes to the top of .main so i dont know how to get rid of the boxes on the top right and bottom right*/
+*::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 0px rgba(0, 0, 0, 0.3);
+    background-color: transparent;
+}
+
+*::-webkit-scrollbar {
+    background-color: transparent;
+}
+
+
+
+
 ::-webkit-scrollbar {
   background-color: #d3d3d3;
   width: 8px;

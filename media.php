@@ -1,25 +1,23 @@
 <?php
-
-// initizing session and verification
+include("./assets/variables.php");
+session_start(); // WHY does it not go off in variables.php
+// Initizing session and verification
 
 if (!isset($_GET["id"])) {
   http_response_code(404);
-  // include 404 error doc here
+  // Include 404 error document here
   die();
 }
 
-// start the session
-session_start();
-
-// check if user is logged in
+// Check if user is logged in
 if (!isset($_SESSION["id"]) || !isset($_SESSION["token"])) {
   http_response_code(404);
-  // include 404 error doc here
+  // Include 404 error document here
   die();
 }
 
-$private = $_SERVER['DOCUMENT_ROOT'] . "/../private/spiteful-chat";
-require_once("$private/database.php");
+
+require_once("$privateFolder/database.php");
 
 $userId = $_SESSION["id"];
 $token = $_SESSION["token"];
@@ -33,7 +31,7 @@ $result = $statement->get_result();
 if ($result->num_rows == 0) {
   session_destroy();
   http_response_code(404);
-  // include 404 error doc here
+  // Include 404 error document here
   die(); // Code no entry 1
 }
 
@@ -42,7 +40,7 @@ $row = $result->fetch_assoc();
 if ($row["token"] != $token) {
   session_destroy();
   http_response_code(404);
-  // include 404 error doc here
+  // Include 404 error document here
   die(); // Code invalid token 1
 }
 
@@ -51,11 +49,11 @@ $timeBetween = time() - $token_generated;
 if ($timeBetween > 28800) { // 28800 is 8 hours
   session_destroy();
   http_response_code(404);
-  // include 404 error doc here
+  // Include 404 error document here
   die();
 }
 
-// user and token are verified
+// User and token are verified
 
 $msgId = $_GET["id"];
 
@@ -75,7 +73,7 @@ $result = $statement -> get_result();
 
 if ($result->num_rows == 0) {
   http_response_code(404);
-  // include 404 error doc here
+  // Include 404 error document here
   die();
 }
 
@@ -83,29 +81,29 @@ $row = $result -> fetch_assoc();
 
 if ($userId != $row["sender"] && $userId != $row["receiver"]) {
   http_response_code(404);
-  // include 404 error doc here
+  // Include 404 error document here
   die();
 }
 
-// check that media file exists
-if (!is_file("$private/chats/media/" . $row["filename"])) {
+// Check that media file exists
+if (!is_file("$privateFolder/chats/media/" . $row["filename"])) {
   http_response_code(404);
-  // include 404 error doc here
+  // Include 404 error document here
   die();
 }
 
-$mediaContent = file_get_contents("$private/chats/media/" . $row["filename"]);
+$mediaContent = file_get_contents("$privateFolder/chats/media/" . $row["filename"]);
 
 header("Cache-Control: no-cache, must-revalidate");
 header("Content-Type: " . $row["type"]);
 
 if (isset($_GET["download"])) {
-  header('Content-Description: File Transfer');
+  header("Content-Description: File Transfer");
   header("Expires: 0");
-  // filename has to be in double quotes (")
-  header('Content-Disposition: attachment; filename="' . $row["original"] . '"');
-  header('Content-Length: ' . filesize("$private/chats/media/" . $row["filename"]));
-  header('Pragma: public');
+  // Filename has to be in double quotes (")
+  header("Content-Disposition: attachment; filename=\"" . $row["original"] . "\"");
+  header("Content-Length: " . filesize("$privateFolder/chats/media/" . $row["filename"]));
+  header("Pragma: public");
 }
 
 die($mediaContent);

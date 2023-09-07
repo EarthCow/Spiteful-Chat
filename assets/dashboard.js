@@ -215,59 +215,64 @@ let my = {
             <span class="lastMsg"></span>
           </span>
         </div>
-      `)
+      `);
 
-        $("#profiles-list").prepend($element)
+        $("#profiles-list").prepend($element);
 
-        let chatObj = new Chat(receiver, result.value.receiver.name, result.value.receiver.picture, $element)
+        let chatObj = new Chat(receiver, result.value.receiver.name, result.value.receiver.picture, $element);
 
-        chatObj.$element.on("click", () => chatObj.init())
+        chatObj.$element.on("click", () => chatObj.init());
 
         // Push the username to the array of all DMs
-        this.chats[receiver] = chatObj
+        this.chats[receiver] = chatObj;
 
-        chatObj.init()
+        chatObj.init();
 
         if (my.socket.available()) my.socket.send("S", receiver);
-      })
+      });
   },
 
   profile: {
     modal() {
       Swal.fire({
         title: "Edit Profile"
-      })
+      });
     }
   },
 
   settings: {
     modal() {
       Swal.fire({
-        title: "Settings"
-      })
+        title: "Settings",
+        footer: "<a href=\"logout\" style=\"text-decoration:none\">Unset Session Vars</a>"
+      });
     },
 
     preferredColorScheme: "systemPreference" // options 'dark' 'light' 'systemPreference'
   }
-}
+};
 
 class Chat {
   constructor(username, name, picture, $element) {
-    this.username = username
-    this.name = name
-    this.picture = picture
-    this.$element = $element
+    this.username = username;
+    this.name = name;
+    this.picture = picture;
+    this.$element = $element;
 
-    this.isSending = false
-    this.msgId = 0
+    this.isSending = false;
+    this.msgId = 0;
+    
+    this.msgSection = 1;
+    this.isGettingMessages = false;
+    this.hasAllMessages = false;
   }
   createMediaMsg(type, src, date, original, mine, append = false) {
     // split the mime type and get the first type (video/mp4 -> "video")
-    var generalType = type.split("/")[0], spanContent
+    var generalType = type.split("/")[0], spanContent;
     // switch through the general types to create type specific message elements
     switch (generalType) {
       case "image":
-        spanContent = `<img src="${src}">`
+        spanContent = `<img src="${src}">`;
         break;
       case "video":
         spanContent = `
@@ -304,6 +309,87 @@ class Chat {
       return;
     }
     return msg
+  }
+   getMessages(prepend = false) {
+    this.isGettingMessages = true
+    if (prepend) {
+      $(".messages").prepend($(`
+        <div class="loader"></div>
+        <label>Loading Messages</label>
+      `))
+    }
+    console.log("Now loading section", this.msgSection)
+    $.post("processes", {
+      process: "getMessages",
+      data: JSON.stringify([this.username, this.msgSection++])
+    })
+      .then(result => {
+        result = verifyResultJSON(result)
+        if (result === false) {
+          return;
+        }
+
+        // verify the result of the request
+        if (!result.ok) {
+          Swal.fire(
+            "Error",
+            result.statusText,
+            "error"
+          )
+        }
+
+        // set variable for the html messages to be iterated and appended to
+        let messageElements = ""
+        // run the iteration on each message
+        result.messages.forEach(message => {
+          // if the message doesn't have a subsequent type variable it is NOT media
+          if (!message.type) {
+            // generate the html text message
+            /*
+                CUSTOM CODE 1/3
+                CONVERT NORMAL MESSAGES
+                THIS IS FOR WHEN MESSAGES ARE LOADED
+            */
+            function convert(text) {
+                var exp = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
+                var ctext = text.replace(exp, "<a target=\"_blank\" style=\"text-decoration:none\" href=\"$1\">$1</a>");
+                var exp2 = /(^|[^\/])(www\.[\S]+(\b|$))/gim;
+                return ctext.replace(exp2, "$1<a target=\"_blank\" style=\"text-decoration:none\" href=\"https://$2\">$2</a>");
+            }
+            var convertedMsg = convert(message.content.replaceAll("\n", "<br>"));
+            /* was:
+            <span>${message.content.replaceAll("\n", "<br>")}</span>
+            */
+            /* END CUSTOM CODE */
+            messageElements += `
+              <div class="messageWrapper${((message.mine) ? " myMessage" : "")}" title="${message.date}">
+                <img src="${((message.mine) ? my.picture : this.picture)}">
+                <span>${convertedMsg}</span>
+              </div>
+            `
+          } else {
+            // this is used for messages that ARE media
+            messageElements += this.createMediaMsg(message.type, message.content, message.date, message.original, message.mine)
+          }
+
+          this.msgId++
+        });
+
+        if (prepend) {
+          $(".messages .loader ~ label, .messages .loader").remove()
+          $(".messages").prepend(messageElements)
+        } else {
+          // render the messages and remove the loader from .messages
+          $(".messages").html(messageElements)
+        }
+        $(".messageWrapper span img, .messageWrapper span video").css("max-height", $(".messagesContainer").height())
+
+        this.hasAllMessages = messageElements.length < 25
+
+        this.isGettingMessages = false
+
+      }
+    )
   }
   init() {
     // verify the chat is in the array of chats
@@ -380,54 +466,10 @@ class Chat {
     $(".msg").focus()
 
     // initiate the request for the messages
-    $.post("processes", {
-      process: "getMessages",
-      data: this.username
-    })
-      .then(result => {
-        result = verifyResultJSON(result)
-        if (result === false) {
-          return;
-        }
+    this.msgSection = 1;
+    this.getMessages();
 
-        // verify the result of the request
-        if (!result.ok) {
-          Swal.fire(
-            "Error",
-            result.statusText,
-            "error"
-          )
-        }
-
-        // set variable for the html messages to be iterated and appended to
-        let messageElements = ""
-        // run the iteration on each message
-        result.messages.forEach(message => {
-          // if the message doesn't have a subsequent type variable it is NOT media
-          if (!message.type) {
-            // generate the html text message
-            messageElements += `
-              <div class="messageWrapper${((message.mine) ? " myMessage" : "")}" title="${message.date}">
-                <img src="${((message.mine) ? my.picture : this.picture)}">
-                <span>${message.content.replaceAll("\n", "<br>")}</span>
-              </div>
-            `
-          } else {
-            // this is used for messages that ARE media
-            messageElements += this.createMediaMsg(message.type, message.content, message.date, message.original, message.mine)
-          }
-
-          this.msgId++
-        });
-
-        // render the messages and remove the loader from .messages
-        $(".messages").html(messageElements)
-        $(".messageWrapper span img, .messageWrapper span video").css("max-height", $(".messagesContainer").height())
-
-        my.openChat = this;
-
-      }
-      )
+    my.openChat = this;
   }
   message() {
     // won't send a message if another one is being sent
@@ -462,7 +504,23 @@ class Chat {
     `)
 
     // ensures shift enter whitespace is html compliant
-    $newMsg.find("span").html(escapeHtml(message).replaceAll("\n", "<br>"))
+    /*
+        CUSTOM CODE 2/3
+        STORE NORMAL TEXT IN DB, ONLY CHANGE WHAT YOU SEE
+        THIS IS FOR WHEN MESSAGES ARE SENT BY YOU
+    */
+    function convert(text) { // converts string only
+        var exp = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
+        var ctext = text.replace(exp, "<a target=\"_blank\" style=\"text-decoration:none\" href=\"$1\">$1</a>");
+        var exp2 = /(^|[^\/])(www\.[\S]+(\b|$))/gim;
+        return ctext.replace(exp2, "$1<a target=\"_blank\" style=\"text-decoration:none\" href=\"https://$2\">$2</a>");
+    }
+    var visualMsg = convert(escapeHtml(message).replaceAll("\n", "<br>"));
+    /* was:
+        $newMsg.find("span").html(escapeHtml(message).replaceAll("\n", "<br>"))
+    */
+    /* END CUSTOM CODE */
+    $newMsg.find("span").html(visualMsg)
 
     // appends the new message to the .messages div
     $(".messages").append($newMsg)
@@ -535,10 +593,26 @@ class Chat {
     // if the message doesn't have a subsequent type variable it is NOT media
     if (!message.type) {
       // generate the html text message
+        /*
+            CUSTOM CODE 3/3
+            CONVERT NORMAL MESSAGES
+            THIS IS FOR WHEN MESSAGES ARE RECIEVED
+        */
+        function convert(text) { // converts string only
+            var exp = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
+            var ctext = text.replace(exp, "<a target=\"_blank\" style=\"text-decoration:none\" href=\"$1\">$1</a>");
+            var exp2 = /(^|[^\/])(www\.[\S]+(\b|$))/gim;
+            return ctext.replace(exp2, "$1<a target=\"_blank\" style=\"text-decoration:none\" href=\"https://$2\">$2</a>");
+        }
+        var visualMsg = convert(message.content.replaceAll("\n", "<br>"));
+        /* was:
+            <span>${message.content.replaceAll("\n", "<br>")}</span>
+        */
+        /* END CUSTOM CODE */
       $newMsg = $(`
         <div class="messageWrapper" title="${message.date}">
           <img src="${this.picture}">
-          <span>${message.content.replaceAll("\n", "<br>")}</span>
+          <span>${visualMsg}</span>
         </div>
       `);
       // set last message
@@ -902,6 +976,13 @@ $(function () {
     my.socket = new MyWebSocket(`${parsed.id}.${parsed.token}`);
     my.socket.init();
   })
+    // Message container scroll
+  $(".messagesContainer").scroll(function() {
+    if (my.openChat.hasAllMessages) return;
+    if ((($(".messagesContainer").scrollTop() - $(".messagesContainer")[0].clientHeight) + $(".messagesContainer")[0].scrollHeight) < 200 && !my.openChat.isGettingMessages) {
+      my.openChat.getMessages(true);
+    }
+  });
 })
 
 window.onresize = function (event) {

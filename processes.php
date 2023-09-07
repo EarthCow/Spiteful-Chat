@@ -68,10 +68,12 @@ if (!isset($_POST['process']) || !isset($_POST['data'])) {
                 $response["statusText"] = "Invalid Operation";
                 die(json_encode($response));
               }
-              $receiver = $data;
+              List($receiver, $section) = json_decode($data);
 
-              // confirm the $receiver is in a valid format
-              if (preg_match('/[-!#@$%^&*()_+|~=`{}\[\]:\";\'<>?,.\\\\\/\s]/', $receiver)) {
+              $section = intval($section);
+
+              // confirm the $receiver is in a valid format and the section is a valid integer
+              if (preg_match('/[-!#@$%^&*()_+|~=`{}\[\]:\";\'<>?,.\\\\\/\s]/', $receiver) || $section < 1) {
                 $response["statusText"] = "Invalid Operation";
                 die(json_encode($response));
               }
@@ -97,6 +99,9 @@ if (!isset($_POST['process']) || !isset($_POST['data'])) {
               // basically instead of finding the chat id in a different query
               // we can use a join statement and a carefully dictated where statement
               // to eliminate the need for an additional query
+              
+              $limitFrom = ($section - 1) * 25;
+              
               $sql = "
               SELECT messages.msg_id, messages.sender, messages.content, messages.timestamp, media.original, media.type
               FROM messages
@@ -105,7 +110,8 @@ if (!isset($_POST['process']) || !isset($_POST['data'])) {
                 JOIN chats
                   ON chats.chat_id = messages.chat_id
               WHERE (chats.sender = $userId AND chats.receiver = $receiverId) OR (chats.sender = $receiverId AND chats.receiver = $userId)
-              ORDER BY messages.msg_id
+              ORDER BY messages.msg_id DESC
+              LIMIT $limitFrom,25
               ";
 
               $result = $connection -> query($sql);
@@ -129,7 +135,7 @@ if (!isset($_POST['process']) || !isset($_POST['data'])) {
                 $messages[$messageKey] = $messageArr;
               }
 
-              $response = ["ok" => true, "messages" => $messages];
+              $response = ["ok" => true, "messages" => array_reverse($messages)];
               die(json_encode($response));
 
               break;
