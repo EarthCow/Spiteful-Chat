@@ -500,6 +500,12 @@
             "de_DE" => "Senden",
         ),
         
+        "settings" => array (
+            "en_US" => "Settings",
+            "es_ES" => "Configuración",
+            "de_DE" => "Einstellungen",
+        ),
+        
     );
     
     $publicWords = [
@@ -544,6 +550,7 @@
         "already-exists",
         "message",
         "sending",
+        "settings",
     ];
 
     if (basename(__FILE__) != basename($_SERVER["SCRIPT_FILENAME"])) {

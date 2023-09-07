@@ -16,7 +16,7 @@
         define("TIME_DAY", 24 * 60 * 60);
         define("TIME_WEEK", 7 * 24 * 60 * 60);
         
-        $language = "en_US"; // Language locale
+        //$language = "en_US"; // Explicitly set language locale
         $locale = locale_get_default(); // Language locale
         if (($locale == "en_001") || ($locale == "en_150") || ($locale == "en_US_POSIX")) {
             $language = "en_US";
