@@ -41,6 +41,10 @@ img {
     user-select: none;
 }
 
+#myName {
+    white-space: nowrap;
+}
+
 /* end custom code */
 
 /*the scrollbar track goes to the top of .main so i dont know how to get rid of the boxes on the top right and bottom right*/
