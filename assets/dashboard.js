@@ -14,9 +14,9 @@ function convertUri(text) { // converts string only
     // regex may be changed to do maybe www.google.com and not just https://www.google.com or https://google.com
     // i think exp2 is trying to do that but it just doesn't
     var exp = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
-    var ctext = text.replaceAll(exp, "<a target=\"_blank\" style=\"text-decoration:none\" href=\"$1\">$1</a>");
+    var ctext = text.replaceAll(exp, "<a target=\"_blank\" style=\"text-decoration:none;font-weight:bold\" href=\"$1\">$1</a>");
     var exp2 = /(^|[^\/])(www\.[\S]+(\b|$))/gim;
-    return ctext.replaceAll(exp2, "$1<a target=\"_blank\" style=\"text-decoration:none\" href=\"https://$2\">$2</a>");
+    return ctext.replaceAll(exp2, "$1<a target=\"_blank\" style=\"text-decoration:none;font-weight:bold\" href=\"https://$2\">$2</a>");
 }
 
 function convertHandle(text) {
