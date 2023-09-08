@@ -39,9 +39,9 @@
         
         $loginSessionLength = TIME_HOUR * 8; // How long the session should last
         
-        $googleDataClientId = "13964511690-v18rnirom2pk4ct8rc5careg7geda2mg.apps.googleusercontent.com"; // x.apps.googleusercontent.com
-        $googleDataLoginUri = "https://dleovl.me/spiteful-chat/cwg";
-        $googleSigninClientId = "905753697514-bat1tv7nld4ltb4fhfo9op5gmf93jggj.apps.googleusercontent.com"; // x.apps.googleusercontent.com
+        $googleDataClientId = ""; // x.apps.googleusercontent.com
+        $googleDataLoginUri = ""; // Link to public instance of cwg.php
+        $googleSigninClientId = ""; // x.apps.googleusercontent.com
         
         /*
         $vapidsubject = "your@email.com";
