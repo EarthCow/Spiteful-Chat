@@ -16,7 +16,7 @@
         define("TIME_DAY", 24 * 60 * 60);
         define("TIME_WEEK", 7 * 24 * 60 * 60);
         
-        // $language = "en_US"; // Explicitly set language locale. Remove or comment out to auto detect.
+        //$language = "en_US"; // Explicitly set language locale. Remove or comment out to auto detect.
         
         /*
             This requires PHP Locale class.
@@ -42,6 +42,13 @@
         $googleDataClientId = "13964511690-v18rnirom2pk4ct8rc5careg7geda2mg.apps.googleusercontent.com"; // x.apps.googleusercontent.com
         $googleDataLoginUri = "https://dleovl.me/spiteful-chat/cwg";
         $googleSigninClientId = "905753697514-bat1tv7nld4ltb4fhfo9op5gmf93jggj.apps.googleusercontent.com"; // x.apps.googleusercontent.com
+        
+        /*
+        $vapidsubject = "your@email.com";
+        // Check generate_keys.php
+        $vapidpublickey = "";
+        $vapidprivatekey = "";
+        */
         
         /* CUSTOM FUNCTIONS */
         

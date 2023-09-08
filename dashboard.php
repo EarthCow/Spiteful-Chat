@@ -124,61 +124,62 @@
 		<link rel="stylesheet" href="<?php echo fileLink("assets/swal-dark.css");?>">
 		<script>
 			<?php if ($row["username"] === null) { ?>
-			  Swal.fire({
-			    title: "<?php echo word("pick-username");?>",
-			    input: "text",
-			    inputAttributes: {
-			      autocapitalize: "off",
-			      spellcheck: "false"
-			    },
-			    showCancelButton: false,
-			    allowEscapeKey: false,
-			    allowOutsideClick: false,
-			    confirmButtonText: "Continue",
-			    showLoaderOnConfirm: true,
-			    preConfirm: (username) => {
-			      if (username === "") {
-			        Swal.showValidationMessage(
-			          `<?php echo word("blank-username");?>`
-			        )
-			      } else {
-			        if (RegExp(/[-!#@$%^&*()_+|~=`{}\[\]:";"<>?,.\\\/\s]/g).test(username)) {
-			          Swal.showValidationMessage(
-			            `<?php echo word("invalid-username-characters");?>`
-			          )
-			        } else {
-			          return $.post("processes", {
-			              process: "updateUsername",
-			              data: username
-			            })
-			            .then(response => {
-			              console.log(response);
-			              response = JSON.parse(response);
-			              if (!response.ok) {
-			                throw new Error(response.statusText)
-			              }
-			              return response
-			            })
-			            .catch(error => {
-			              Swal.showValidationMessage(
-			                error
-			              )
-			            })
-			        }
-			      }
-			    }
-			    //allowOutsideClick: () => !Swal.isLoading()
-			  }).then((result) => {
-			    if (result.isConfirmed) {
-			      console.log(result.value)
-			      Toast.fire({
-			        title: `<?php echo word("welcome,");?> ${result.value.username}`,
-			        icon: "success"
-			      })
-			    }
-			  })
+            Swal.fire({
+                title: "<?php echo word("pick-username");?>",
+                input: "text",
+                inputAttributes: {
+                    autocapitalize: "off",
+                    spellcheck: "false"
+                },
+                showCancelButton: false,
+                allowEscapeKey: false,
+                allowOutsideClick: false,
+                confirmButtonText: "<?php echo word("continue");?>",
+                showLoaderOnConfirm: true,
+                preConfirm: (username) => {
+                    if (username === "") {
+                        Swal.showValidationMessage(
+                            `<?php echo word("blank-username");?>`
+                        )
+                    } else {
+                        if (RegExp(/[-!#@$%^&*()_+|~=`{}\[\]:";"<>?,.\\\/\s]/g).test(username)) {
+                            Swal.showValidationMessage(
+                                `<?php echo word("invalid-username-characters");?>`
+                            )
+                        } else {
+                            return $.post("processes", {
+                                process: "updateUsername",
+                                data: username
+                            })
+                            .then(response => {
+                                console.log(response);
+                                response = JSON.parse(response);
+                                if (!response.ok) {
+                                    throw new Error(response.statusText)
+                                }
+                                return response
+                            })
+                            .catch(error => {
+                                Swal.showValidationMessage(
+                                    error
+                                )
+                            })
+                        }
+                    }
+                }
+                //allowOutsideClick: () => !Swal.isLoading()
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    console.log(result.value)
+                    Toast.fire({
+                        icon: "success",
+                        title: `<?php echo word("welcome,");?> ${result.value.username}`,
+                    })
+                }
+            })
 			<?php } ?>
 		</script>
+		<script src="<?php echo fileLink("assets/jquery.quickfit.js");?>"></script>
 		<script src="<?php echo fileLink("assets/dashboard.js");?>"></script>
 	</body>
 </html>
