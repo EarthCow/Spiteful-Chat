@@ -1,10 +1,16 @@
+<?php
+
+    require "./assets/configuration.php";
+    require "./assets/language.php";
+
+?>
 <!DOCTYPE html>
-<html>
-  <head>
-    <title>Maintenance</title>
-  </head>
-  <body style="text-align: center;">
-    <h1>Spiteful Chat Maintenance</h1>
-    <p>The chat is currently being worked on and you are denied access.</p>
-  </body>
+<html lang="en">
+    <head>
+        <title><?php echo word("maintenance");?></title>
+    </head>
+    <body style="text-align:center">
+        <h1><?php echo word("spiteful-maintenance");?></h1>
+        <p><?php echo word("chat-being-worked-on");?></p>
+    </body>
 </html>
