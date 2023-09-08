@@ -20,9 +20,9 @@
         
         $id_token = $_POST["credential"];
         
-        require_once "$privateFolder/google-client-id.php";
+        require_once "$privateFolder/google-variables.php";
         
-        $client = new Google_Client(["client_id" => $google_client_id]);  // Specify the CLIENT_ID of the app that accesses the backend
+        $client = new Google_Client(["client_id" => $googleClientId]);  // Specify the CLIENT_ID of the app that accesses the backend
         $payload = $client->verifyIdToken($id_token);
         if (!$payload) {
             

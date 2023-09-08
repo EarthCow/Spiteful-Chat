@@ -2,6 +2,7 @@
 
     require_once "./assets/configuration.php";
     require_once "./assets/languages.php";
+    require_once "$privateFolder/google-variables.php";
     
     if (isset($_SESSION["id"])) {
         header("Location: ./dashboard");
@@ -14,7 +15,7 @@
     <head>
         <title><?php echo word("spiteful-chat");?></title>
         <?php echo metaTags(2);?>
-        <meta name="google-signin-client_id" content="<?php echo $googleSigninClientId;?>">
+        <meta name="google-signin-client_id" content="<?php echo $googleClientId;?>">
         <style>
             html,
             body {
@@ -77,7 +78,7 @@
             <div class="wrapper">
                 <h3><?php echo word("hello");?></h3>
                 <h5><?php echo word("please-login");?></h5>
-                <div id="g_id_onload" data-client_id="<?php echo $googleDataClientId;?>" data-context="signin" data-ux_mode="redirect" data-login_uri="<?php echo $googleDataLoginUri;?>" data-nonce="" data-auto_prompt="false"></div>
+                <div id="g_id_onload" data-client_id="<?php echo $googleClientId;?>" data-context="signin" data-ux_mode="redirect" data-login_uri="<?php echo $googleLoginUri;?>" data-nonce="" data-auto_prompt="false"></div>
                 <div class="g_id_signin" data-type="standard" data-shape="pill" data-theme="filled_black" data-text="continue_with" data-size="large" data-logo_alignment="left"></div>
             </div>
         </div>

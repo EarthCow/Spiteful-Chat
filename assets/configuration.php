@@ -38,12 +38,8 @@
         $spiteSocketServerPort = "12345"; // Spiteful Server Websocket Port
         
         $loginSessionLength = TIME_HOUR * 8; // How long the session should last
-        
-        $googleDataClientId = ""; // x.apps.googleusercontent.com
-        $googleDataLoginUri = ""; // Link to public instance of cwg.php
-        $googleSigninClientId = ""; // x.apps.googleusercontent.com
-        
-        /*
+
+		/*
         $vapidsubject = "your@email.com";
         // Check generate_keys.php
         $vapidpublickey = "";
