@@ -598,9 +598,8 @@ class Chat {
         $(".messageWrapper span img, .messageWrapper span video").css("max-height", $(".messagesContainer").height());
       });
       $(".messageBar").show(400);
+      $(".msg").focus();
     }, 500);
-
-    $(".msg").focus();
 
     // Initiate the request for the messages
     this.msgSection = 1;
