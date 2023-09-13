@@ -63,9 +63,7 @@ if (!isset($_POST["credential"])) {
     } else {
       $row = $result->fetch_assoc();
 
-      session_start([
-        "cookie_lifetime" => $loginSessionLength,
-      ]);
+      startSession();
       $_SESSION["id"] = $row["user_id"];
       $_SESSION["token"] = $token;
       header("Location: ./dashboard");

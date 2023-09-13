@@ -1,6 +1,5 @@
 <?php
 
-$noSession = true;
 require_once "./assets/configuration.php";
 require_once "./assets/languages.php";
 
@@ -8,8 +7,6 @@ if (!isset($_POST["process"]) || !isset($_POST["data"])) {
   header("Location: ./"); // Redirects to /spiteful-chat/
   die();
 } else {
-  // Start the session
-  session_start();
   // Check if user is logged in
   if (!isset($_SESSION["id"]) || !isset($_SESSION["token"])) {
     die("SESS");

@@ -59,11 +59,18 @@ if ($debug === true) {
   ini_set("display_errors", 1);
 }
 
+function startSession()
+{
+  global $chatRoot, $loginSessionLength;
+  ini_set('session.gc-maxlifetime', $loginSessionLength);
+  session_name("SPITESESSID");
+  session_set_cookie_params($loginSessionLength, $chatRoot); // Sets the session cookies expiration date and path attribute
+  session_start();
+}
+
 if ((!isset($noSession) || ($noSession === false)) && (session_status() === PHP_SESSION_NONE)) {
   // Starts session if $noSession does not exist (or set to false) and if session is not already started
-  session_start([
-    "cookie_lifetime" => $loginSessionLength,
-  ]);
+  startSession();
 }
 
 if (php_sapi_name() === "cli") {
