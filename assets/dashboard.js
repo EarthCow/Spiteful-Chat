@@ -492,7 +492,7 @@ class Chat {
         // Set variable for the html messages to be iterated and appended to
         let messageElements = "";
         // Run the iteration on each message
-        result.messages.forEach(message => {
+        result.messages.forEach((message, index) => {
           // If the message doesn't have a subsequent type variable it is NOT media
           if (!message.type) {
             my.openChat.username = this.username;
@@ -507,6 +507,29 @@ class Chat {
           } else {
             // This is used for messages that ARE media
             messageElements += this.createMediaMsg(message.type, message.content, message.date, message.original, message.mine);
+          }
+
+          // Determine whether a date line should be added
+          if (result.messages[index+1]) {
+            let msgDate = new Date(message.date),
+              nextMsgDate = new Date(result.messages[index+1].date);
+            if (nextMsgDate.getMonth() != msgDate.getMonth() || nextMsgDate.getDate() != msgDate.getDate() || nextMsgDate.getFullYear() != msgDate.getFullYear()) {
+              messageElements += `
+                <p class="centeredWithLines" style="color: #808080;">
+                  ${nextMsgDate.getMonth()+1}/${nextMsgDate.getDate()}/${nextMsgDate.getFullYear()} ${nextMsgDate.getHours()}:${String(nextMsgDate.getMinutes()).length != 2 ? "0" + nextMsgDate.getMinutes() : nextMsgDate.getMinutes()}
+                </p>
+              `;
+            }
+          } else if (prepend) {
+            let msgDate = new Date(message.date),
+              nextMsgDate = new Date($(".messages .messageWrapper").first()[0].title);
+            if (nextMsgDate.getMonth() != msgDate.getMonth() || nextMsgDate.getDate() != msgDate.getDate() || nextMsgDate.getFullYear() != msgDate.getFullYear()) {
+              messageElements += `
+                <p class="centeredWithLines" style="color: #808080;">
+                  ${nextMsgDate.getMonth()+1}/${nextMsgDate.getDate()}/${nextMsgDate.getFullYear()} ${nextMsgDate.getHours()}:${String(nextMsgDate.getMinutes()).length != 2 ? "0" + nextMsgDate.getMinutes() : nextMsgDate.getMinutes()}
+                </p>
+              `;
+            }
           }
 
           this.msgId++;
@@ -645,8 +668,19 @@ class Chat {
     `);
 
     // Ensures shift enter whitespace is html compliant
-    var visualMsg = convertHandle(convertUri(escapeHtml(message).replaceAll("\n", "<br>")));
+    let visualMsg = convertHandle(convertUri(escapeHtml(message).replaceAll("\n", "<br>")));
     $newMsg.find("span").html(visualMsg);
+
+    // Determine whether a date line should be added beforehand
+    if ($(".messages .messageWrapper").last()[0]) {
+      let msgDate = new Date(), lastMsgDate = new Date($(".messages .messageWrapper").last()[0].title);
+      if (lastMsgDate.getMonth() != msgDate.getMonth() || lastMsgDate.getDate() != msgDate.getDate() || lastMsgDate.getFullYear() != msgDate.getFullYear())
+        $(".messages").append(`
+          <p class="centeredWithLines" style="color: #808080;">
+            ${msgDate.getMonth()+1}/${msgDate.getDate()}/${msgDate.getFullYear()} ${msgDate.getHours()}:${String(msgDate.getMinutes()).length != 2 ? "0" + msgDate.getMinutes() : msgDate.getMinutes()}
+          </p>
+        `);
+    }
 
     // Appends the new message to the .messages div
     $(".messages").append($newMsg);
@@ -679,6 +713,8 @@ class Chat {
           $lastMsgSpan.text(message);
           // If the message sent it changes the transparency of the message element in the .messages div
           $newMsg.css("opacity", 1);
+          // Set date
+          $newMsg.attr("title", result.lm);
         } else {
           // If the message failed to send it fires an error toast
           Toast.fire({
@@ -708,6 +744,8 @@ class Chat {
               $lastMsgSpan.text(message);
               // If the message sent it changes the transparency of the message element in the .messages div
               $newMsg.css("opacity", 1);
+              // Set date
+              $newMsg.attr("title", result.lm);
             } else {
               // If the message failed to send it fires an error toast
               Toast.fire({

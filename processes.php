@@ -133,7 +133,7 @@ if (!isset($_POST["process"]) || !isset($_POST["data"])) {
 
               foreach ($messages as $messageKey => $messageArr) {
                 $messageArr["date"] = date(
-                  "m/d/Y h:i:s",
+                  "m/d/Y H:i:s",
                   strtotime($messageArr["timestamp"])
                 );
                 unset($messageArr["timestamp"]);

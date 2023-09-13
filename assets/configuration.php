@@ -36,6 +36,7 @@ define("TIME_WEEK", 7 * 24 * 60 * 60);
 
 $maintenance = false;
 
+$chatRoot = "/spiteful-chat/"; // Public directory root of the project
 $privateFolder = "/private/spiteful-chat"; // Private directory location from directory behind DOCUMENT_ROOT
 $composerFolder = "./vendor"; // PHP Composer Directory
 $nodeModulesFolder = "./node_modules"; // NPM Modules Directory
@@ -60,7 +61,9 @@ if ($debug === true) {
 
 if ((!isset($noSession) || ($noSession === false)) && (session_status() === PHP_SESSION_NONE)) {
   // Starts session if $noSession does not exist (or set to false) and if session is not already started
-  session_start();
+  session_start([
+    "cookie_lifetime" => $loginSessionLength,
+  ]);
 }
 
 if (php_sapi_name() === "cli") {
@@ -76,6 +79,7 @@ if (php_sapi_name() === "cli") {
 
 function logout()
 {
+  global $chatRoot;
   if (session_status() === PHP_SESSION_NONE) {
     session_start();
   }
