@@ -164,12 +164,13 @@ if (!isset($_POST["process"]) || !isset($_POST["data"])) {
                 true
               );
 
-              if (preg_match('/[-!#@$%^&*()_+|~=`{}\[\]:\";\'<>?,.\\\\\/\s]/', $receiver)) {
+              $message = trim($message);
+
+              if (preg_match('/[-!#@$%^&*()_+|~=`{}\[\]:\";\'<>?,.\\\\\/\s]/', $receiver) || empty($message)) {
                 $response["statusText"] = word("invalid-operation");
                 die(json_encode($response));
               }
 
-              $message = str_replace("<br>", "\n", $message);
               $message = htmlspecialchars($message);
 
               $sql =

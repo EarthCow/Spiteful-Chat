@@ -110,11 +110,11 @@ class SpiteServer extends WebSocketServer
 
         // Media may not contain key content
         if (isset($message["content"])) {
-          $message["content"] = str_replace(
-            "<br>",
-            "\n",
-            $message["content"]
-          );
+          $message["content"] = trim($message["content"]);
+          if (empty($message["content"])) {
+            $this->respond($user, word("invalid-operation"));
+            return;
+          }
           $message["content"] = htmlspecialchars($message["content"]);
         }
 

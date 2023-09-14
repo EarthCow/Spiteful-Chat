@@ -643,7 +643,7 @@ class Chat {
 
     // Define the textarea with the message and the content (the message itself)
     let $msgBox = $(".msg"),
-      message = $msgBox.val();
+      message = $msgBox.val().trim();
     if (message === "") {
       // Will not send an empty message
       Toast.fire({
