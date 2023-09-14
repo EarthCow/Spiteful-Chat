@@ -11,19 +11,20 @@ The real media data is saved to /private/spiteful-chat/chats/media/
 ## Hosting
 
 The steps to host your own version of this repository are as follows:
+
 1. Download the zipped source code and unpack within your virtual host environment
-2. Import *database.sql* into a new MySQL database and install dependencies using [composer](https://getcomposer.org/download/) `$ composer install` and [npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) `$ npm install`
+2. Import _database.sql_ into a new MySQL database and install dependencies using [composer](https://getcomposer.org/download/) `$ composer install` and [npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) `$ npm install`
 3. Create a /private/spiteful-chat/ directory at the **same level** as your DOCUMENT_ROOT directory
 4. Create /private/spiteful-chat/database.php:
-  
+
 ```
 <?php $GLOBALS["connection"] = new mysqli($host, $username, $password, $database);
 ```
 
-**Note:** You may need to change the required resource in websocket/spiteful-chat.php to match your full path as $_SERVER["DOCUMENT_ROOT"] cannot be used there
+**Note:** You may need to change the required resource in websocket/spiteful-chat.php to match your full path as $\_SERVER["DOCUMENT_ROOT"] cannot be used there
 
 5. Create /private/spiteful-chat/google-client-id.php:
-  
+
 ```
 <?php $googleClientId = "your-client-id.apps.googleusercontent.com";
       $googleLoginUri = "https://your-domain/spiteful-chat/cwg"; // Link to public instance of cwg.php
@@ -35,6 +36,7 @@ The steps to host your own version of this repository are as follows:
 9. Add the following to your SSL virtual host (Apache) or server block (Nginx) (usually port 443):
 
 For an **Apache** setup
+
 ```
 RewriteEngine On
 RewriteCond %{REQUEST_URI} ^/_ws_/
@@ -45,7 +47,9 @@ RewriteRule ^/_ws_/(.*) ws://127.0.0.1:12345/$1 [P,L]
 ProxyPass /_ws_/ ws://127.0.0.1:12345
 ProxyPassReverse /_ws_/ ws://127.0.0.1:12345
 ```
+
 For a **Nginx** setup
+
 ```
 location ~ /_ws_/* {
   rewrite ^/_ws_/(.*)$ /$1 break;
@@ -57,6 +61,7 @@ location ~ /_ws_/* {
   proxy_cache_bypass $http_upgrade;
 }
 ```
+
 Get more information about this configuration [here](https://httpd.apache.org/docs/2.4/mod/mod_proxy_wstunnel.html) for Apache or [here](https://www.nginx.com/blog/websocket-nginx/) for Nginx
 
 10. Run `$ php websocket/spiteful-chat.php` to start the websocket server
@@ -68,6 +73,7 @@ We welcome contributions to enhance the functionality and stability this project
 Feel free to submit issues with questions, bug reports, feature requests, or the like.
 
 If you want to contribute code here are the steps to get started:
+
 1. Fork this project
 2. Clone your fork of this project
 3. Depending upon your situation follow the hosting steps
@@ -78,3 +84,13 @@ If you want to contribute code here are the steps to get started:
 8. Push your commits to your fork
 9. Open a pull request
 10. Be ready to make any necessary changes required by the reviewers
+
+**Whitespace Rules**
+
+This project enforces whitespace rules using [prettier](https://prettier.io/).
+
+Run the following before each commit:
+
+```
+npx prettier . --write
+```

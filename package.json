@@ -11,5 +11,8 @@
     "jquery": "^3.6.1",
     "sweetalert2": "^11.4.8"
   },
-  "description": ""
+  "description": "",
+  "devDependencies": {
+    "prettier": "3.0.3"
+  }
 }

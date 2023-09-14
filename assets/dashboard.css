@@ -59,11 +59,11 @@ a {
   margin: 10px auto;
   border-radius: 50%;
   border-right: 2.5px solid #f2f2f2;
-  animation: spin .75s linear infinite;
-  -webkit-animation: spin .75s linear infinite;
+  animation: spin 0.75s linear infinite;
+  -webkit-animation: spin 0.75s linear infinite;
 }
 
-.loader+label {
+.loader + label {
   text-align: center;
   color: #808080;
   margin-bottom: 5px;
@@ -115,7 +115,7 @@ a {
   overflow: hidden;
   text-align: center;
 
-  color: #808080
+  color: #808080;
 }
 
 .centeredWithLines:before,
@@ -149,7 +149,6 @@ a {
 }
 
 .main {
-
   max-width: 95%;
   height: 95%;
   border-radius: 12px;
@@ -158,7 +157,7 @@ a {
   flex-flow: row nowrap;
   font-size: 11pt;
   transform: scale(0);
-  transition: transform .5s;
+  transition: transform 0.5s;
 }
 
 /* Profile Block */
@@ -169,7 +168,7 @@ a {
   display: flex;
   flex-direction: column;
 
-  transition: width .5s;
+  transition: width 0.5s;
   border-radius: 12px;
   -webkit-user-select: none;
   -moz-user-select: none;
@@ -189,7 +188,7 @@ a {
   color: white;
   border-radius: 0.25rem;
   box-sizing: border-box;
-  transition: background-color .25s;
+  transition: background-color 0.25s;
 }
 
 .newMsgBtn:hover {
@@ -223,16 +222,16 @@ a {
   align-items: center;
   gap: 5px;
 
-  margin: 2.5px 10px
+  margin: 2.5px 10px;
 }
 
 .active-dm {
-  background-color: rgba(0, 0, 0, 0.10);
+  background-color: rgba(0, 0, 0, 0.1);
 }
 
 button:hover,
 .profiles-block li:hover {
-  background-color: rgba(0, 0, 0, 0.10);
+  background-color: rgba(0, 0, 0, 0.1);
   cursor: default;
 }
 
@@ -278,7 +277,7 @@ button:hover,
 }
 
 .my-profile-section span:last-child {
-  font-size: .8rem;
+  font-size: 0.8rem;
   color: #808080;
 }
 
@@ -288,7 +287,7 @@ button:hover,
   font-size: 1.25rem;
   padding: 5px 10px;
   height: 100%;
-  transition: background-color .25s;
+  transition: background-color 0.25s;
   border-radius: 0.25rem;
 }
 
@@ -298,16 +297,15 @@ button:hover,
   flex-flow: row nowrap;
   gap: 5px;
   padding: 5px 10px;
-  transition: background-color .25s;
+  transition: background-color 0.25s;
   border-radius: 0.25rem;
   cursor: default;
 }
 
 .my-profile-block:hover,
 .my-profile-section button:hover {
-  background-color: rgba(0, 0, 0, .10);
+  background-color: rgba(0, 0, 0, 0.1);
 }
-
 
 /* Messages Block */
 
@@ -322,11 +320,13 @@ button:hover,
   /* min-width: 325px; */
   opacity: 0;
 
-  transition: width .5s, opacity .4s;
+  transition:
+    width 0.5s,
+    opacity 0.4s;
   border-radius: 0 12px 12px 0;
 }
 
-.messageWrapper>img {
+.messageWrapper > img {
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
@@ -369,7 +369,7 @@ button:hover,
 
 .recipientBlock span:last-child {
   color: #808080;
-  font-size: .8rem;
+  font-size: 0.8rem;
 }
 
 /* Profile picture badges - IMG tags do not support ::after unfortunately */
@@ -420,7 +420,7 @@ button:hover,
   gap: 5px;
 }
 
-.messageWrapper>img {
+.messageWrapper > img {
   border-radius: 50%;
   width: 1.8rem;
   height: 1.8rem;
@@ -460,8 +460,8 @@ button:hover,
 .messageBar {
   display: flex;
   align-items: center;
-  gap: .75rem;
-  padding: 0 .75rem;
+  gap: 0.75rem;
+  padding: 0 0.75rem;
 
   z-index: 2;
   box-shadow: 0 -5px 10px -5px rgb(0 0 0 / 35%);
@@ -474,7 +474,7 @@ button:hover,
   width: 2rem;
   background-color: transparent;
   cursor: pointer;
-  transition: .25s background-color ease-in-out;
+  transition: 0.25s background-color ease-in-out;
 }
 
 .messageBar button:hover {
@@ -490,7 +490,7 @@ button:hover,
 
   border: 1px solid #d3d3d3;
   border-radius: 2.5rem;
-  margin: .5rem 0;
+  margin: 0.5rem 0;
   padding: 1rem;
   background-color: transparent;
 }
@@ -530,7 +530,7 @@ button:hover,
 
 .uploadingContainer .innerBar {
   background-color: #7066e0;
-  border-radius: .25rem;
+  border-radius: 0.25rem;
 }
 
 /* MEDIA TAGS */
@@ -576,11 +576,11 @@ button:hover,
   }
 
   .newMsgBtn {
-    background-color: #7066e0
+    background-color: #7066e0;
   }
 
   .newMsgBtn:hover {
-    background-color: #6057c6
+    background-color: #6057c6;
   }
 
   .messageWrapper span {
@@ -597,7 +597,6 @@ button:hover,
   .msg {
     border-color: var(--inside-detail) !important;
   }
-
 }
 
 @media only screen and (max-width: 650px) {

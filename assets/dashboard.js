@@ -65,7 +65,7 @@ $.getJSON("./assets/languages.php", (data) => {
   translations = data;
 }).fail(() => {
   console.error("Translations failed to load");
-})
+});
 
 function word(word) {
   return translations[word];
@@ -81,8 +81,8 @@ const SwalLoading = Swal.mixin({
   allowOutsideClick: false,
   allowEscapeKey: false,
   allowEnterKey: false,
-  didOpen: () => Swal.showLoading()
-})
+  didOpen: () => Swal.showLoading(),
+});
 
 function openChat(user) {
   if (my.openChat && my.openChat.username == user) {
@@ -106,17 +106,16 @@ function openChat(user) {
   SwalLoading.fire();
   $.post("processes", {
     process: "newChat",
-    data: user
-  })
-    .then(response => {
-      if (response = verifyResultJSON(response)) {
-        if (!response.ok) {
-          Swal.fire("Error", response.statusText, "error")
-          return;
-        }
-        let receiver = response.receiver.username;
-        let $element = $(document.createElement("li"));
-        $element.append(`
+    data: user,
+  }).then((response) => {
+    if ((response = verifyResultJSON(response))) {
+      if (!response.ok) {
+        Swal.fire("Error", response.statusText, "error");
+        return;
+      }
+      let receiver = response.receiver.username;
+      let $element = $(document.createElement("li"));
+      $element.append(`
           <div class="wrapper">
             <div class="profile-picture-wrapper">
               <img src="${response.receiver.picture}">
@@ -129,15 +128,20 @@ function openChat(user) {
             </span>
           </div>
         `);
-        $("#profiles-list").prepend($element);
-        let chatObj = new Chat(receiver, response.receiver.name, response.receiver.picture, $element);
-        chatObj.$element.on("click", () => chatObj.init());
-        my.chats[receiver] = chatObj;
-        chatObj.init();
-        // This is to get the current status of the new chat user
-        if (my.socket.available()) my.socket.send("S", receiver);
-      }
-    })
+      $("#profiles-list").prepend($element);
+      let chatObj = new Chat(
+        receiver,
+        response.receiver.name,
+        response.receiver.picture,
+        $element,
+      );
+      chatObj.$element.on("click", () => chatObj.init());
+      my.chats[receiver] = chatObj;
+      chatObj.init();
+      // This is to get the current status of the new chat user
+      if (my.socket.available()) my.socket.send("S", receiver);
+    }
+  });
 }
 
 let my = {
@@ -150,8 +154,7 @@ let my = {
 
   getChats() {
     if (this.socket.available()) {
-      this.socket.send("C", "", parsed => {
-
+      this.socket.send("C", "", (parsed) => {
         if (!parsed.ok) {
           Toast.fire({
             icon: "error",
@@ -170,8 +173,7 @@ let my = {
         $(".profiles-block .loader").hide();
         $("#profiles-list").html("");
 
-        parsed.chats.forEach(chat => {
-
+        parsed.chats.forEach((chat) => {
           let $element = $(document.createElement("li"));
           $element.append(`
             <div class="wrapper">
@@ -188,52 +190,54 @@ let my = {
           `);
 
           // Will already be escaped html
-          $element.find(".lastMsg").html(chat.last_message ?? "")
+          $element.find(".lastMsg").html(chat.last_message ?? "");
 
-          $("#profiles-list").append($element)
+          $("#profiles-list").append($element);
 
-          let chatObj = new Chat(chat.username, chat.name, chat.picture, $element);
+          let chatObj = new Chat(
+            chat.username,
+            chat.name,
+            chat.picture,
+            $element,
+          );
 
           chatObj.$element.on("click", () => chatObj.init());
 
           // Push the username to the array of all DMs
           this.chats[chat.username] = chatObj;
         });
-
       });
     } else {
       $.post("processes", {
         process: "getChats",
-        data: "896"
-      })
-        .then(result => {
-          result = verifyResultJSON(result);
-          if (result === false) {
-            return;
-          }
+        data: "896",
+      }).then((result) => {
+        result = verifyResultJSON(result);
+        if (result === false) {
+          return;
+        }
 
-          if (!result.ok) {
-            Toast.fire({
-              icon: "error",
-              title: word("error"),
-              text: result.statusText,
-              confirmButtonText: word("ok"),
-            });
-            return;
-          }
+        if (!result.ok) {
+          Toast.fire({
+            icon: "error",
+            title: word("error"),
+            text: result.statusText,
+            confirmButtonText: word("ok"),
+          });
+          return;
+        }
 
-          if (!result.chats) {
-            return;
-          }
+        if (!result.chats) {
+          return;
+        }
 
-          // Hide the loading animation
-          $(".profiles-block .loader").hide();
-          $("#profiles-list").html("");
+        // Hide the loading animation
+        $(".profiles-block .loader").hide();
+        $("#profiles-list").html("");
 
-          result.chats.forEach(chat => {
-
-            let $element = $(document.createElement("li"));
-            $element.append(`
+        result.chats.forEach((chat) => {
+          let $element = $(document.createElement("li"));
+          $element.append(`
             <div class="wrapper">
                 <div class="profile-picture-wrapper">
                     <img src="${chat.picture}">
@@ -247,31 +251,37 @@ let my = {
             </div>
           `);
 
-            // Will already be escaped html
-            $element.find(".lastMsg").html(((chat.last_message) ? chat.last_message : ""));
+          // Will already be escaped html
+          $element
+            .find(".lastMsg")
+            .html(chat.last_message ? chat.last_message : "");
 
-            $("#profiles-list").append($element);
+          $("#profiles-list").append($element);
 
-            let chatObj = new Chat(chat.username, chat.name, chat.picture, $element);
+          let chatObj = new Chat(
+            chat.username,
+            chat.name,
+            chat.picture,
+            $element,
+          );
 
-            chatObj.$element.on("click", () => chatObj.init());
+          chatObj.$element.on("click", () => chatObj.init());
 
-            // Push the username to the array of all DMs
-            this.chats[chat.username] = chatObj;
-          });
-
+          // Push the username to the array of all DMs
+          this.chats[chat.username] = chatObj;
         });
+      });
     }
   },
 
   newChat() {
     Swal.fire({
       title: word("who-recipient"),
-      input: 'text',
+      input: "text",
       inputAttributes: {
-        autocapitalize: 'off',
+        autocapitalize: "off",
         spellcheck: "false",
-        placeholder: word("username")
+        placeholder: word("username"),
       },
       showCancelButton: true,
       reverseButtons: true,
@@ -283,9 +293,7 @@ let my = {
       preConfirm: (username) => {
         // Check if the field is empty
         if (username === "") {
-          Swal.showValidationMessage(
-            word("blank-username")
-          );
+          Swal.showValidationMessage(word("blank-username"));
           return;
         }
         // Check if the username is already in the list of chats
@@ -299,19 +307,19 @@ let my = {
           return;
         }
         // Verify the integrity of the entered username
-        if (new RegExp(/[-!#@$%^&*()_+|~=`{}\[\]:";'<>?,.\\\/\s]/g).test(username)) {
-          Swal.showValidationMessage(
-            word("invalid-username-characters-to")
-          );
+        if (
+          new RegExp(/[-!#@$%^&*()_+|~=`{}\[\]:";'<>?,.\\\/\s]/g).test(username)
+        ) {
+          Swal.showValidationMessage(word("invalid-username-characters-to"));
           return;
         }
         // Return the post request
         return $.post("processes", {
           process: "newChat",
-          data: username
+          data: username,
         })
-          .then(response => {
-            if (response = verifyResultJSON(response)) {
+          .then((response) => {
+            if ((response = verifyResultJSON(response))) {
               if (!response.ok) {
                 throw new Error(response.statusText);
               }
@@ -319,38 +327,35 @@ let my = {
               return response;
             }
           })
-          .catch(error => {
-            Swal.showValidationMessage(
-              error
-            );
+          .catch((error) => {
+            Swal.showValidationMessage(error);
           });
       },
       backdrop: true,
-      allowOutsideClick: () => !Swal.isLoading()
-    })
-      .then((result) => {
-        if (!result.isConfirmed) {
-          console.log(word("not-confirmed"));
-          return;
-        }
-        if (typeof result.value != "object") {
-          console.log(word("not-an-object"));
-          return;
-        }
-        let receiver = result.value.receiver.username;
-        if (result.value.alreadyExists) {
-          Toast.fire({
-            icon: "info",
-            title: word("conversation-exists") + receiver,
-            confirmButtonText: word("ok"),
-          });
-          my.chats[receiver].init();
-          console.log(word("already-exists"));
-          return;
-        }
-        // Create the new chat
-        let $element = $(document.createElement("li"));
-        $element.append(`
+      allowOutsideClick: () => !Swal.isLoading(),
+    }).then((result) => {
+      if (!result.isConfirmed) {
+        console.log(word("not-confirmed"));
+        return;
+      }
+      if (typeof result.value != "object") {
+        console.log(word("not-an-object"));
+        return;
+      }
+      let receiver = result.value.receiver.username;
+      if (result.value.alreadyExists) {
+        Toast.fire({
+          icon: "info",
+          title: word("conversation-exists") + receiver,
+          confirmButtonText: word("ok"),
+        });
+        my.chats[receiver].init();
+        console.log(word("already-exists"));
+        return;
+      }
+      // Create the new chat
+      let $element = $(document.createElement("li"));
+      $element.append(`
           <div class="wrapper">
               <div class="profile-picture-wrapper">
                   <img src="${result.value.receiver.picture}">
@@ -364,19 +369,24 @@ let my = {
           </div>
         `);
 
-        $("#profiles-list").prepend($element);
+      $("#profiles-list").prepend($element);
 
-        let chatObj = new Chat(receiver, result.value.receiver.name, result.value.receiver.picture, $element);
+      let chatObj = new Chat(
+        receiver,
+        result.value.receiver.name,
+        result.value.receiver.picture,
+        $element,
+      );
 
-        chatObj.$element.on("click", () => chatObj.init());
+      chatObj.$element.on("click", () => chatObj.init());
 
-        // Push the username to the array of all DMs
-        this.chats[receiver] = chatObj;
+      // Push the username to the array of all DMs
+      this.chats[receiver] = chatObj;
 
-        chatObj.init();
+      chatObj.init();
 
-        if (my.socket.available()) my.socket.send("S", receiver);
-      });
+      if (my.socket.available()) my.socket.send("S", receiver);
+    });
   },
 
   profile: {
@@ -385,20 +395,23 @@ let my = {
         title: word("edit-profile"),
         confirmButtonText: word("ok"),
       });
-    }
+    },
   },
 
   settings: {
     modal() {
       Swal.fire({
         title: word("settings"),
-        footer: "<a href=\"logout\" style=\"text-decoration:none\">" + word("logout") + "</a<!--br><button id=\"notificationEnabler\" onclick=\"enableNotifications()\">Enable Notifications</button>-->",
+        footer:
+          '<a href="logout" style="text-decoration:none">' +
+          word("logout") +
+          '</a<!--br><button id="notificationEnabler" onclick="enableNotifications()">Enable Notifications</button>-->',
         confirmButtonText: word("ok"),
       });
     },
 
-    preferredColorScheme: "systemPreference" // Options: 'dark', 'light', 'systemPreference'
-  }
+    preferredColorScheme: "systemPreference", // Options: 'dark', 'light', 'systemPreference'
+  },
 };
 
 class Chat {
@@ -427,7 +440,9 @@ class Chat {
       case "video":
         spanContent = `
           <video controls>
-              <source src="${src}" type="${((type == "video/quicktime") ? "video/mp4" : type)}">
+              <source src="${src}" type="${
+                type == "video/quicktime" ? "video/mp4" : type
+              }">
           </video>
         `;
         break;
@@ -448,8 +463,8 @@ class Chat {
     }
 
     let msg = `
-      <div class="messageWrapper${((mine) ? " myMessage" : "")}" title="${date}">
-          <img src="${((mine) ? my.picture : this.picture)}">
+      <div class="messageWrapper${mine ? " myMessage" : ""}" title="${date}">
+          <img src="${mine ? my.picture : this.picture}">
           <span>${spanContent}</span>
       </div>
     `;
@@ -463,92 +478,127 @@ class Chat {
   getMessages(prepend = false) {
     this.isGettingMessages = true;
     if (prepend) {
-      $(".messages").prepend($(`
+      $(".messages").prepend(
+        $(`
         <div class="loader"></div>
         <label>${word("loading-messages")}</label>
-      `));
+      `),
+      );
     }
     console.log(word("now-loading-section"), this.msgSection);
     $.post("processes", {
       process: "getMessages",
-      data: JSON.stringify([this.username, this.msgSection++])
-    })
-      .then(result => {
-        result = verifyResultJSON(result);
-        if (result === false) {
-          return;
-        }
+      data: JSON.stringify([this.username, this.msgSection++]),
+    }).then((result) => {
+      result = verifyResultJSON(result);
+      if (result === false) {
+        return;
+      }
 
-        // Verify the result of the request
-        if (!result.ok) {
-          Swal.fire({
-            title: word("error"),
-            text: result.statusText,
-            icon: "error",
-            confirmButtonText: word("ok"),
-          });
-        }
+      // Verify the result of the request
+      if (!result.ok) {
+        Swal.fire({
+          title: word("error"),
+          text: result.statusText,
+          icon: "error",
+          confirmButtonText: word("ok"),
+        });
+      }
 
-        // Set variable for the html messages to be iterated and appended to
-        let messageElements = "";
-        // Run the iteration on each message
-        result.messages.forEach((message, index) => {
-          // If the message doesn't have a subsequent type variable it is NOT media
-          if (!message.type) {
-            my.openChat.username = this.username;
-            // Generate the html text message
-            var convertedMsg = convertHandle(convertUri(message.content.replaceAll("\n", "<br>")));
-            messageElements += `
-              <div class="messageWrapper${((message.mine) ? " myMessage" : "")}" title="${message.date}">
-                  <img src="${((message.mine) ? my.picture : this.picture)}">
+      // Set variable for the html messages to be iterated and appended to
+      let messageElements = "";
+      // Run the iteration on each message
+      result.messages.forEach((message, index) => {
+        // If the message doesn't have a subsequent type variable it is NOT media
+        if (!message.type) {
+          my.openChat.username = this.username;
+          // Generate the html text message
+          var convertedMsg = convertHandle(
+            convertUri(message.content.replaceAll("\n", "<br>")),
+          );
+          messageElements += `
+              <div class="messageWrapper${
+                message.mine ? " myMessage" : ""
+              }" title="${message.date}">
+                  <img src="${message.mine ? my.picture : this.picture}">
                   <span>${convertedMsg}</span>
               </div>
             `;
-          } else {
-            // This is used for messages that ARE media
-            messageElements += this.createMediaMsg(message.type, message.content, message.date, message.original, message.mine);
-          }
-
-          // Determine whether a date line should be added
-          if (result.messages[index+1]) {
-            let msgDate = new Date(message.date),
-              nextMsgDate = new Date(result.messages[index+1].date);
-            if (nextMsgDate.getMonth() != msgDate.getMonth() || nextMsgDate.getDate() != msgDate.getDate() || nextMsgDate.getFullYear() != msgDate.getFullYear()) {
-              messageElements += `
-                <p class="centeredWithLines" style="color: #808080;">
-                  ${nextMsgDate.getMonth()+1}/${nextMsgDate.getDate()}/${nextMsgDate.getFullYear()} ${nextMsgDate.getHours()}:${String(nextMsgDate.getMinutes()).length != 2 ? "0" + nextMsgDate.getMinutes() : nextMsgDate.getMinutes()}
-                </p>
-              `;
-            }
-          } else if (prepend) {
-            let msgDate = new Date(message.date),
-              nextMsgDate = new Date($(".messages .messageWrapper").first()[0].title);
-            if (nextMsgDate.getMonth() != msgDate.getMonth() || nextMsgDate.getDate() != msgDate.getDate() || nextMsgDate.getFullYear() != msgDate.getFullYear()) {
-              messageElements += `
-                <p class="centeredWithLines" style="color: #808080;">
-                  ${nextMsgDate.getMonth()+1}/${nextMsgDate.getDate()}/${nextMsgDate.getFullYear()} ${nextMsgDate.getHours()}:${String(nextMsgDate.getMinutes()).length != 2 ? "0" + nextMsgDate.getMinutes() : nextMsgDate.getMinutes()}
-                </p>
-              `;
-            }
-          }
-
-          this.msgId++;
-        });
-
-        if (prepend) {
-          $(".messages .loader ~ label, .messages .loader").remove();
-          $(".messages").prepend(messageElements);
         } else {
-          // Render the messages and remove the loader from .messages
-          $(".messages").html(messageElements);
+          // This is used for messages that ARE media
+          messageElements += this.createMediaMsg(
+            message.type,
+            message.content,
+            message.date,
+            message.original,
+            message.mine,
+          );
         }
-        $(".messageWrapper span img, .messageWrapper span video").css("max-height", $(".messagesContainer").height());
 
-        this.hasAllMessages = messageElements.length < 25;
+        // Determine whether a date line should be added
+        if (result.messages[index + 1]) {
+          let msgDate = new Date(message.date),
+            nextMsgDate = new Date(result.messages[index + 1].date);
+          if (
+            nextMsgDate.getMonth() != msgDate.getMonth() ||
+            nextMsgDate.getDate() != msgDate.getDate() ||
+            nextMsgDate.getFullYear() != msgDate.getFullYear()
+          ) {
+            messageElements += `
+                <p class="centeredWithLines" style="color: #808080;">
+                  ${
+                    nextMsgDate.getMonth() + 1
+                  }/${nextMsgDate.getDate()}/${nextMsgDate.getFullYear()} ${nextMsgDate.getHours()}:${
+                    String(nextMsgDate.getMinutes()).length != 2
+                      ? "0" + nextMsgDate.getMinutes()
+                      : nextMsgDate.getMinutes()
+                  }
+                </p>
+              `;
+          }
+        } else if (prepend) {
+          let msgDate = new Date(message.date),
+            nextMsgDate = new Date(
+              $(".messages .messageWrapper").first()[0].title,
+            );
+          if (
+            nextMsgDate.getMonth() != msgDate.getMonth() ||
+            nextMsgDate.getDate() != msgDate.getDate() ||
+            nextMsgDate.getFullYear() != msgDate.getFullYear()
+          ) {
+            messageElements += `
+                <p class="centeredWithLines" style="color: #808080;">
+                  ${
+                    nextMsgDate.getMonth() + 1
+                  }/${nextMsgDate.getDate()}/${nextMsgDate.getFullYear()} ${nextMsgDate.getHours()}:${
+                    String(nextMsgDate.getMinutes()).length != 2
+                      ? "0" + nextMsgDate.getMinutes()
+                      : nextMsgDate.getMinutes()
+                  }
+                </p>
+              `;
+          }
+        }
 
-        this.isGettingMessages = false;
-
+        this.msgId++;
       });
+
+      if (prepend) {
+        $(".messages .loader ~ label, .messages .loader").remove();
+        $(".messages").prepend(messageElements);
+      } else {
+        // Render the messages and remove the loader from .messages
+        $(".messages").html(messageElements);
+      }
+      $(".messageWrapper span img, .messageWrapper span video").css(
+        "max-height",
+        $(".messagesContainer").height(),
+      );
+
+      this.hasAllMessages = messageElements.length < 25;
+
+      this.isGettingMessages = false;
+    });
   }
   init() {
     // Verify the chat is in the array of chats
@@ -576,10 +626,11 @@ class Chat {
     `);
 
     if ($(".recipientBlock img").prop("src") != this.picture) {
-
       $(".recipientBlock img").prop("src", this.picture);
       $(".recipientBlock span").eq(0).text(this.name);
-      $(".recipientBlock span").eq(1).text("@" + this.username);
+      $(".recipientBlock span")
+        .eq(1)
+        .text("@" + this.username);
 
       // Set active chat
       if ($(".active-dm")[0]) $(".active-dm").removeClass("active-dm");
@@ -618,7 +669,10 @@ class Chat {
     setTimeout(function () {
       $(".recipientBlock").show(400);
       $(".messagesContainer").show(500, function () {
-        $(".messageWrapper span img, .messageWrapper span video").css("max-height", $(".messagesContainer").height());
+        $(".messageWrapper span img, .messageWrapper span video").css(
+          "max-height",
+          $(".messagesContainer").height(),
+        );
       });
       $(".messageBar").show(400);
       $(".msg").focus();
@@ -668,16 +722,29 @@ class Chat {
     `);
 
     // Ensures shift enter whitespace is html compliant
-    let visualMsg = convertHandle(convertUri(escapeHtml(message).replaceAll("\n", "<br>")));
+    let visualMsg = convertHandle(
+      convertUri(escapeHtml(message).replaceAll("\n", "<br>")),
+    );
     $newMsg.find("span").html(visualMsg);
 
     // Determine whether a date line should be added beforehand
     if ($(".messages .messageWrapper").last()[0]) {
-      let msgDate = new Date(), lastMsgDate = new Date($(".messages .messageWrapper").last()[0].title);
-      if (lastMsgDate.getMonth() != msgDate.getMonth() || lastMsgDate.getDate() != msgDate.getDate() || lastMsgDate.getFullYear() != msgDate.getFullYear())
+      let msgDate = new Date(),
+        lastMsgDate = new Date($(".messages .messageWrapper").last()[0].title);
+      if (
+        lastMsgDate.getMonth() != msgDate.getMonth() ||
+        lastMsgDate.getDate() != msgDate.getDate() ||
+        lastMsgDate.getFullYear() != msgDate.getFullYear()
+      )
         $(".messages").append(`
           <p class="centeredWithLines" style="color: #808080;">
-            ${msgDate.getMonth()+1}/${msgDate.getDate()}/${msgDate.getFullYear()} ${msgDate.getHours()}:${String(msgDate.getMinutes()).length != 2 ? "0" + msgDate.getMinutes() : msgDate.getMinutes()}
+            ${
+              msgDate.getMonth() + 1
+            }/${msgDate.getDate()}/${msgDate.getFullYear()} ${msgDate.getHours()}:${
+              String(msgDate.getMinutes()).length != 2
+                ? "0" + msgDate.getMinutes()
+                : msgDate.getMinutes()
+            }
           </p>
         `);
     }
@@ -698,65 +765,71 @@ class Chat {
     this.isSending = true;
     // If the socket is open then we send through the socket but if it's not then the message gets sent post like normal
     if (my.socket.available()) {
-      my.socket.send("M", [this.username, {
-        type: false,
-        content: message,
-      }], (result) => {
-        // Resets the isSending to false
-        this.isSending = false;
-
-        // Set last message
-        $lastMsgSpan.removeClass("mute italic").html("&nbsp;");
-
-        if (result.ok) {
-          // Set last message - this one can use .text() because it is not already escaped :)
-          $lastMsgSpan.text(message);
-          // If the message sent it changes the transparency of the message element in the .messages div
-          $newMsg.css("opacity", 1);
-          // Set date
-          $newMsg.attr("title", result.lm);
-        } else {
-          // If the message failed to send it fires an error toast
-          Toast.fire({
-            icon: "error",
-            title: result.statusText,
-            confirmButtonText: word("ok"),
-          });
-        }
-        this.msgId++;
-      });
-    } else {
-      $.post("processes", {
-        process: "sendMessage",
-        data: JSON.stringify([this.username, message])
-      })
-        .then((result) => {
+      my.socket.send(
+        "M",
+        [
+          this.username,
+          {
+            type: false,
+            content: message,
+          },
+        ],
+        (result) => {
           // Resets the isSending to false
           this.isSending = false;
 
           // Set last message
           $lastMsgSpan.removeClass("mute italic").html("&nbsp;");
 
-          // Verify the result is indeed json and sets the result to the json value
-          if (result = verifyResultJSON(result)) {
-            if (result.ok) {
-              // Set last message
-              $lastMsgSpan.text(message);
-              // If the message sent it changes the transparency of the message element in the .messages div
-              $newMsg.css("opacity", 1);
-              // Set date
-              $newMsg.attr("title", result.lm);
-            } else {
-              // If the message failed to send it fires an error toast
-              Toast.fire({
-                icon: "error",
-                text: result.statusText,
-                confirmButtonText: word("ok"),
-              });
-            }
-            this.msgId++;
+          if (result.ok) {
+            // Set last message - this one can use .text() because it is not already escaped :)
+            $lastMsgSpan.text(message);
+            // If the message sent it changes the transparency of the message element in the .messages div
+            $newMsg.css("opacity", 1);
+            // Set date
+            $newMsg.attr("title", result.lm);
+          } else {
+            // If the message failed to send it fires an error toast
+            Toast.fire({
+              icon: "error",
+              title: result.statusText,
+              confirmButtonText: word("ok"),
+            });
           }
-        });
+          this.msgId++;
+        },
+      );
+    } else {
+      $.post("processes", {
+        process: "sendMessage",
+        data: JSON.stringify([this.username, message]),
+      }).then((result) => {
+        // Resets the isSending to false
+        this.isSending = false;
+
+        // Set last message
+        $lastMsgSpan.removeClass("mute italic").html("&nbsp;");
+
+        // Verify the result is indeed json and sets the result to the json value
+        if ((result = verifyResultJSON(result))) {
+          if (result.ok) {
+            // Set last message
+            $lastMsgSpan.text(message);
+            // If the message sent it changes the transparency of the message element in the .messages div
+            $newMsg.css("opacity", 1);
+            // Set date
+            $newMsg.attr("title", result.lm);
+          } else {
+            // If the message failed to send it fires an error toast
+            Toast.fire({
+              icon: "error",
+              text: result.statusText,
+              confirmButtonText: word("ok"),
+            });
+          }
+          this.msgId++;
+        }
+      });
     }
   }
 
@@ -766,7 +839,9 @@ class Chat {
     // If the message doesn't have a subsequent type variable it is NOT media
     if (!message.type) {
       // Generate the html text message
-      var visualMsg = convertHandle(convertUri(message.content.replaceAll("\n", "<br>")));
+      var visualMsg = convertHandle(
+        convertUri(message.content.replaceAll("\n", "<br>")),
+      );
       document.title = "💬 " + word("dashboard");
       $newMsg = $(`
         <div class="messageWrapper" title="${message.date}">
@@ -778,7 +853,15 @@ class Chat {
       $lastMsgSpan.html(message.content);
     } else {
       // This is used for messages that ARE media
-      $newMsg = $(this.createMediaMsg(message.type, message.src, message.date, message.original, false));
+      $newMsg = $(
+        this.createMediaMsg(
+          message.type,
+          message.src,
+          message.date,
+          message.original,
+          false,
+        ),
+      );
       // Set last message
       $lastMsgSpan.html(message.original);
     }
@@ -792,7 +875,10 @@ class Chat {
 
     // Render the messages and remove the loader from .messages
     $(".messages").append($newMsg);
-    $(".messageWrapper span img, .messageWrapper span video").css("max-height", $(".messagesContainer").height());
+    $(".messageWrapper span img, .messageWrapper span video").css(
+      "max-height",
+      $(".messagesContainer").height(),
+    );
   }
 }
 
@@ -800,16 +886,16 @@ function upload(chat) {
   let $status, $innerBar;
 
   function byteConverter(bytes) {
-    var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-    if (bytes === 0) return 'n/a';
+    var sizes = ["Bytes", "KB", "MB", "GB", "TB"];
+    if (bytes === 0) return "n/a";
     var i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
-    if (i === 0) return bytes + ' ' + sizes[i];
-    return (bytes / Math.pow(1024, i)).toFixed(1) + ' ' + sizes[i];
+    if (i === 0) return bytes + " " + sizes[i];
+    return (bytes / Math.pow(1024, i)).toFixed(1) + " " + sizes[i];
   }
 
   function modal() {
     Swal.fire({
-      title: 'Upload',
+      title: "Upload",
       confirmButtonText: word("upload-and-send"),
 
       html: `
@@ -824,7 +910,13 @@ function upload(chat) {
       didOpen: () => {
         $("#fileInput").on("change", function () {
           let file = this.files[0];
-          $("#uploadBoxP").html(((file) ? `${file.name}<br><span style="color:orange">${byteConverter(file.size)}</span>` : word("click-here-or-drag-drop")));
+          $("#uploadBoxP").html(
+            file
+              ? `${file.name}<br><span style="color:orange">${byteConverter(
+                  file.size,
+                )}</span>`
+              : word("click-here-or-drag-drop"),
+          );
         });
       },
 
@@ -835,9 +927,7 @@ function upload(chat) {
       preConfirm: () => {
         let file = $("#fileInput")[0].files[0];
         if (!file) {
-          Swal.showValidationMessage(
-            word("select-file")
-          );
+          Swal.showValidationMessage(word("select-file"));
           return;
         }
 
@@ -847,18 +937,20 @@ function upload(chat) {
         return false;
       },
       backdrop: true,
-      allowOutsideClick: () => !Swal.isLoading()
+      allowOutsideClick: () => !Swal.isLoading(),
     });
   }
 
   function send(file) {
-    let newUploadDiv = document.createElement('div');
+    let newUploadDiv = document.createElement("div");
     newUploadDiv.id = "uploaderDiv";
     newUploadDiv.innerHTML = `
       <div class="uploadingContainer">
           <div class="inlineRow">
               <label for="outerBar" id="fileNameLabel">${file.name}</label>
-              <div id="bytes" class="status" style="float:right;">0B/${byteConverter(file.size)}</div>
+              <div id="bytes" class="status" style="float:right;">0B/${byteConverter(
+                file.size,
+              )}</div>
           </div>
           <div id="outerBar" class="outerBar">
               <div id="innerBar" class="innerBar"></div>
@@ -893,19 +985,24 @@ function upload(chat) {
   }
 
   function progressHandler(event) {
-    $("#bytes").html(`Uploaded ${byteConverter(event.loaded)}/${byteConverter(event.total)}`);
+    $("#bytes").html(
+      `Uploaded ${byteConverter(event.loaded)}/${byteConverter(event.total)}`,
+    );
 
     var percent = Math.round((event.loaded / event.total) * 100);
 
-    $innerBar.animate({
-      "width": percent + "%"
-    }, 0.15);
+    $innerBar.animate(
+      {
+        width: percent + "%",
+      },
+      0.15,
+    );
     $innerBar.html(percent + "%");
 
     if (percent == 100) {
       $status.css({
         fontWeight: "bold",
-        textDecoration: "underline"
+        textDecoration: "underline",
       });
       $status.html(word("finalizing"));
     } else {
@@ -945,7 +1042,14 @@ function upload(chat) {
 
     my.socket.send("M", [chat.username, result]);
 
-    chat.createMediaMsg(result.type, result.src, result.date, result.original, true, true);
+    chat.createMediaMsg(
+      result.type,
+      result.src,
+      result.date,
+      result.original,
+      true,
+      true,
+    );
     chat.$element.find(".lastMsg").text(result.lastMsg);
     // Move chat to the top of the list
     if (!chat.$element.is(":first-child")) {
@@ -984,7 +1088,7 @@ const Toast = Swal.mixin({
   didOpen: (toast) => {
     toast.addEventListener("mouseenter", Swal.stopTimer);
     toast.addEventListener("mouseleave", Swal.resumeTimer);
-  }
+  },
 });
 
 function verifyResultJSON(result) {
@@ -1032,7 +1136,8 @@ function receiveMessage(msg) {
 
   if (parsed.status !== undefined) {
     if (my.chats[parsed.username]) {
-      my.chats[parsed.username].$element.find(".status-circle")[0].className = "status-circle " + parsed.status;
+      my.chats[parsed.username].$element.find(".status-circle")[0].className =
+        "status-circle " + parsed.status;
     }
     return;
   }
@@ -1068,7 +1173,12 @@ function receiveMessage(msg) {
 
       $("#profiles-list").prepend($element);
 
-      let chatObj = new Chat(parsed.sender, parsed.info.name, parsed.info.picture, $element);
+      let chatObj = new Chat(
+        parsed.sender,
+        parsed.info.name,
+        parsed.info.picture,
+        $element,
+      );
 
       chatObj.$element.on("click", () => chatObj.init());
 
@@ -1088,12 +1198,13 @@ class MyWebSocket {
     this.recurringPing;
 
     this.available = () => {
-      return my.socket.socket.readyState == my.socket.socket.OPEN
+      return my.socket.socket.readyState == my.socket.socket.OPEN;
     };
   }
 
   init() {
-    const host = "wss://" + window.location.hostname + "/_ws_/" + this.credentials;
+    const host =
+      "wss://" + window.location.hostname + "/_ws_/" + this.credentials;
     try {
       this.socket = new WebSocket(host);
       this.socket.onopen = () => {
@@ -1101,7 +1212,7 @@ class MyWebSocket {
         my.getChats();
         console.log(word("websocket-connected"));
         this.recurringPing = setInterval(() => {
-          this.send("P", word("ping"))
+          this.send("P", word("ping"));
         }, 4000);
       };
       this.socket.onmessage = receiveMessage;
@@ -1119,12 +1230,15 @@ class MyWebSocket {
   send(instruction, content, callback) {
     if (!this.available()) return false;
     try {
-      if (typeof callback == "function") this.waitingActions[this.sendId] = callback;
-      this.socket.send(JSON.stringify({
-        instruction: instruction,
-        content: content,
-        sendId: instruction == "P" ? 0 : this.sendId++
-      }));
+      if (typeof callback == "function")
+        this.waitingActions[this.sendId] = callback;
+      this.socket.send(
+        JSON.stringify({
+          instruction: instruction,
+          content: content,
+          sendId: instruction == "P" ? 0 : this.sendId++,
+        }),
+      );
     } catch (ex) {
       console.log(ex);
     }
@@ -1132,12 +1246,12 @@ class MyWebSocket {
 
   reconnect() {
     if (this.socket.readyState != this.socket.CLOSED) return;
-    if (document.visibilityState !== 'visible') return;
+    if (document.visibilityState !== "visible") return;
     if (this.connectionAttempts++ > 1) {
       Toast.fire({
         icon: "info",
         title: word("disconnected-reconnect"),
-        didOpen: () => Swal.showLoading()
+        didOpen: () => Swal.showLoading(),
       });
       setTimeout(() => {
         console.log(word("disconnected-reconnect"));
@@ -1148,7 +1262,6 @@ class MyWebSocket {
     console.log(word("disconnected-reconnect"));
     this.init();
   }
-
 }
 
 /* DOCUMENT ONLOAD FUNCTION */
@@ -1160,46 +1273,59 @@ $(function () {
   $("#myName").quickfit();
 
   document.addEventListener("visibilitychange", function () {
-    if (document.visibilityState === 'visible') {
+    if (document.visibilityState === "visible") {
       my.socket.reconnect();
     }
   });
 
-  $.post("processes", {
-    process: "getLogin",
-    data: 869
-  }, function (result) {
-    const parsed = verifyResultJSON(result);
-    my.socket = new MyWebSocket(`${parsed.id}.${parsed.token}`);
-    my.socket.init();
-  });
+  $.post(
+    "processes",
+    {
+      process: "getLogin",
+      data: 869,
+    },
+    function (result) {
+      const parsed = verifyResultJSON(result);
+      my.socket = new MyWebSocket(`${parsed.id}.${parsed.token}`);
+      my.socket.init();
+    },
+  );
   // Message container scroll
   $(".messagesContainer").scroll(function () {
     if (my.openChat.hasAllMessages) return;
-    if ((($(".messagesContainer").scrollTop() - $(".messagesContainer")[0].clientHeight) + $(".messagesContainer")[0].scrollHeight) < 200 && !my.openChat.isGettingMessages) {
+    if (
+      $(".messagesContainer").scrollTop() -
+        $(".messagesContainer")[0].clientHeight +
+        $(".messagesContainer")[0].scrollHeight <
+        200 &&
+      !my.openChat.isGettingMessages
+    ) {
       my.openChat.getMessages(true);
     }
   });
 });
 
 window.onresize = function () {
-  $(".messageWrapper span img, .messageWrapper span video").css("max-height", $(".messagesContainer").height());
+  $(".messageWrapper span img, .messageWrapper span video").css(
+    "max-height",
+    $(".messagesContainer").height(),
+  );
 };
 
 function actallyHideMsgBlock() {
   $(".profiles-block").width("calc(250px + 50vw)");
   $(".messages-block").css({
     "min-width": "unset",
-    "width": 0,
-    "opacity": 0
+    width: 0,
+    opacity: 0,
   });
 }
 
 function showMsgBlock() {
   $(".profiles-block").width(250);
   $(".messages-block").css({
-    "width": "50vw",
-    "opacity": 1
+    width: "50vw",
+    opacity: 1,
   });
   // need to add min width somewhere
 }
@@ -1210,9 +1336,10 @@ function showProfileList() {
 
 function fixMessageBoxHeight(msgBox) {
   msgBox[0].style.height = 0;
-  msgBox[0].style.height = ((msgBox[0].scrollHeight > 1000) ? 1000 : msgBox[0].scrollHeight + 1) + "px";
+  msgBox[0].style.height =
+    (msgBox[0].scrollHeight > 1000 ? 1000 : msgBox[0].scrollHeight + 1) + "px";
 
-  if ((msgBox[0].scrollHeight - 10) > msgBox.outerHeight()) {
+  if (msgBox[0].scrollHeight - 10 > msgBox.outerHeight()) {
     msgBox.css("overflow-y", "scroll");
   } else msgBox.css("overflow-y", "hidden");
 }
@@ -1220,17 +1347,29 @@ function fixMessageBoxHeight(msgBox) {
 /* MESSAGE FORMATTING FUNCTIONS */
 
 const escapeHtml = (unsafe) => {
-  return unsafe.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;');
+  return unsafe
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 };
 
 function convertUri(text) {
   // Converts string only
   // Regex may be changed to do maybe www.google.com and not just https://www.google.com or https://google.com
   // exp2 may be trying to do that but it just doesn't
-  var exp = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
-  var ctext = text.replaceAll(exp, "<a target=\"_blank\" style=\"text-decoration:none;font-weight:bold\" href=\"$1\">$1</a>");
+  var exp =
+    /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/gi;
+  var ctext = text.replaceAll(
+    exp,
+    '<a target="_blank" style="text-decoration:none;font-weight:bold" href="$1">$1</a>',
+  );
   var exp2 = /(^|[^\/])(www\.[\S]+(\b|$))/gim;
-  return ctext.replaceAll(exp2, "$1<a target=\"_blank\" style=\"text-decoration:none;font-weight:bold\" href=\"https://$2\">$2</a>");
+  return ctext.replaceAll(
+    exp2,
+    '$1<a target="_blank" style="text-decoration:none;font-weight:bold" href="https://$2">$2</a>',
+  );
 }
 
 function convertHandle(text) {
@@ -1242,19 +1381,16 @@ function convertHandle(text) {
   return text.replace(mentionRegex, replaceMentions);
 }
 
-function previewMedia(type, src) {
-
-}
+function previewMedia(type, src) {}
 
 function adminRequest(request = "clear", data = 896) {
   $.post("processes", {
     process: "administrator",
     data: JSON.stringify({
       request: request,
-      data: data
-    })
-  })
-    .then(function (result) {
-      console.log(result);
-    });
+      data: data,
+    }),
+  }).then(function (result) {
+    console.log(result);
+  });
 }

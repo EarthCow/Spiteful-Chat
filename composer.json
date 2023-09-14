@@ -1,15 +1,15 @@
 {
-    "require": {
-        "google/apiclient": "^2.15.0",
-        "minishlink/web-push": "^8.0"
-    },
-    "scripts": {
-        "pre-autoload-dump": "Google\\Task\\Composer::cleanup"
-    },
-    "extra": {
-        "google/apiclient-services": [
-            "Drive",
-            "YouTube"
-        ]
-    }
+  "require": {
+    "google/apiclient": "^2.15.0",
+    "minishlink/web-push": "^8.0"
+  },
+  "scripts": {
+    "pre-autoload-dump": "Google\\Task\\Composer::cleanup"
+  },
+  "extra": {
+    "google/apiclient-services": [
+      "Drive",
+      "YouTube"
+    ]
+  }
 }
