@@ -1,0 +1,23 @@
+name: Prettier Formatting Check
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  prettier-check:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v2
+
+    - name: Setup Node.js environment
+      uses: actions/setup-node@v3.8.1
+
+    - name: Install dev dependencies
+      run: npm install --only=dev
+
+    - name: Check Prettier formatting
+      run: npx prettier . --check
