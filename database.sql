@@ -42,6 +42,7 @@ CREATE TABLE `profiles` (
   `email_verified` int NOT NULL,
   `picture` varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `chats` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin,
+  `notify_sub` json DEFAULT NULL,
   `token` varchar(256) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `token_generated` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `last_active` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,

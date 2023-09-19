@@ -10,8 +10,14 @@ function spiteErrorHandler($errno, $errstr, $errfile, $errline)
 set_error_handler("spiteErrorHandler");
 
 require_once "./assets/configuration.php";
+require_once "$composerFolder/autoload.php";
+
+use Minishlink\WebPush\WebPush;
+use Minishlink\WebPush\Subscription;
+
 require_once "./assets/languages.php";
 require_once "./websocket/websockets.php";
+require_once "$privateFolder/vapid-keys.php";
 require_once "$privateFolder/database.php";
 
 restore_error_handler();
@@ -50,6 +56,7 @@ class SpiteServer extends WebSocketServer
   // ran when server recieves data
   protected function process($user, $message)
   {
+    global $vapidPublic, $vapidPrivate;
     $parsedMsg = null;
     try {
       $parsedMsg = json_decode($message, true);
@@ -203,6 +210,40 @@ class SpiteServer extends WebSocketServer
               ],
             ])
           );
+        } else {
+          // If the receiver is not online and they are subscribed send them a push notification
+          $sql = "SELECT `notify_sub` FROM `profiles` WHERE `username` = ?";
+          $statement = $GLOBALS["connection"]->prepare($sql);
+          $statement->bind_param("s", $receiverUsername);
+          $statement->execute();
+          $result = $statement->get_result();
+          if ($result->num_rows == 1) {
+            $receiverSub = $result->fetch_assoc()["notify_sub"];
+            if ($receiverSub != null) {
+              $sub = Subscription::create(json_decode($receiverSub, true));
+
+              $push = new WebPush(["VAPID" => [
+                "subject" => "Message",
+                "publicKey" => $vapidPublic,
+                "privateKey" => $vapidPrivate
+              ]]);
+              
+              $result = $push->sendOneNotification($sub, json_encode([
+                  "title" => "Message from @" . $user->username,
+                  "body" => $message["content"],
+                  "icon" => $user->picture,
+                  // "image" => $user->picture
+              ]));
+              
+              if (!$result->isSuccess()) {
+                $endpoint = $result->getRequest()->getUri()->__toString();
+                $this->stdout("Send failed {$endpoint}: {$result->getReason()}");
+                $this->stdout($result->getRequest());
+                $this->stdout($result->getResponse());
+                $this->stdout($result->isSubscriptionExpired());
+              }
+            }
+          }
         }
 
         $this->respond($user, word("message-sent-successfully"), true, [
@@ -266,6 +307,27 @@ class SpiteServer extends WebSocketServer
         }
         unset($currentUser);
         break;
+      case "SUB":
+        if (empty($parsedMsg["content"])) {
+          $this->respond($user, word("invalid-operation"));
+          return;
+        }
+
+        $sql =
+          "UPDATE `profiles` SET `notify_sub` = ? WHERE `user_id`=?";
+        $statement = $GLOBALS["connection"]->prepare($sql);
+        $notifySub = json_encode($parsedMsg["content"]);
+        $statement->bind_param("si", $notifySub, $user->sessId);
+        $statement->execute();
+
+        $user->notifySub = $parsedMsg["content"];
+
+        $this->updateMysqlLastUsed();
+
+        $this->respond($user, "Successfully updated records", true, [
+          "sendId" => $parsedMsg["sendId"],
+        ]);
+        return;
       case "P":
         $this->respond($user, word("pong"), true);
         break;

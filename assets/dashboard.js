@@ -1,64 +1,5 @@
 "use strict";
 
-var $ = jQuery;
-
-/*
-function enableNotifications() {
-  if (Notification.permission === "default") {
-    Notification.requestPermission().then(perm => {
-      if (Notification.permission === "granted") {
-        regWorker().catch(err => console.error(err));
-      } else {
-        console.error("Notification access has been declined.");
-      }
-    });
-  } else if (Notification.permission === "granted") {
-    regWorker().catch(err => console.error(err));
-  } else {
-    console.error("Notification access has been declined.");
-  }
-}
-
-// Register service worker
-async function regWorker() {
-  const publicKey = "BGaXrka4qKrrpnVk0wGn2BZHnE3m2jRVJf7tlGAI__O7SHstOhmkHmmOvKSLG9nBhAvOlsJ1h4d7_cyqQe8H0ak";
-  navigator.serviceWorker.register("services.js", {
-    scope: "./"
-  }); // assuming domain.com/spiteful-chat/
-  navigator.serviceWorker.ready
-    .then(reg => {
-      reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: publicKey
-      }).then(
-        sub => {
-          var data = new FormData();
-          data.append("sub", JSON.stringify(sub));
-          fetch("assets/push.php", {
-              method: "POST",
-              body: data
-            })
-            .then(res => res.text())
-            .then(txt => console.log(txt))
-            .catch(err => console.error(err));
-        },
-        err => console.error(err)
-      );
-    });
-}
-
-const check = () => {
-  if (!('serviceWorker' in navigator)) {
-    $("#notificationEnabler").prop("disabled", true);
-    console.error("Service workers not supported by browser.");
-  }
-  if (!('PushManager' in window)) {
-    $("#notificationEnabler").prop("disabled", true);
-    console.error("Push API not supported by browser.");
-  }
-};
-*/
-
 // Fetch translations
 var translations;
 $.getJSON("./assets/languages.php", (data) => {
@@ -1210,6 +1151,7 @@ class MyWebSocket {
       this.socket.onopen = () => {
         this.connectionAttempts = 0;
         my.getChats();
+        enableNotifications();
         console.log(word("websocket-connected"));
         this.recurringPing = setInterval(() => {
           this.send("P", word("ping"));
@@ -1263,6 +1205,57 @@ class MyWebSocket {
     this.init();
   }
 }
+
+/* BROWSER NOTIFICATIONS */
+
+function enableNotifications() {
+  if (Notification.permission === "default") {
+    Notification.requestPermission().then((perm) => {
+      if (Notification.permission === "granted") {
+        regWorker().catch((err) => console.error(err));
+      } else {
+        console.error("Notification access has been declined.");
+      }
+    });
+  } else if (Notification.permission === "granted") {
+    regWorker().catch((err) => console.error(err));
+  } else {
+    console.error("Notification access has been declined.");
+  }
+}
+
+// Register service worker
+async function regWorker() {
+  const publicKey =
+    "BKTAsOIOQk4wxD5ASwIW4lGk8xVNknGCaxLUNV6QWBB2Fkq5bifE3VdNVLA6WbRrzfV83gSlYeXxDvgaEggBjt8";
+  navigator.serviceWorker.register("services.js", {
+    scope: "./",
+  }); // assuming domain.com/spiteful-chat/
+  navigator.serviceWorker.ready.then((reg) => {
+    reg.pushManager
+      .subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: publicKey,
+      })
+      .then(
+        (sub) => {
+          my.socket.send("SUB", sub);
+        },
+        (err) => console.error(err),
+      );
+  });
+}
+
+const check = () => {
+  if (!("serviceWorker" in navigator)) {
+    $("#notificationEnabler").prop("disabled", true);
+    console.error("Service workers not supported by browser.");
+  }
+  if (!("PushManager" in window)) {
+    $("#notificationEnabler").prop("disabled", true);
+    console.error("Push API not supported by browser.");
+  }
+};
 
 /* DOCUMENT ONLOAD FUNCTION */
 
