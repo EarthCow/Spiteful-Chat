@@ -1151,7 +1151,7 @@ class MyWebSocket {
       this.socket.onopen = () => {
         this.connectionAttempts = 0;
         my.getChats();
-        enableNotifications();
+        if (Notification.permission == "granted") enableNotifications();
         console.log(word("websocket-connected"));
         this.recurringPing = setInterval(() => {
           this.send("P", word("ping"));
@@ -1226,8 +1226,6 @@ function enableNotifications() {
 
 // Register service worker
 async function regWorker() {
-  const publicKey =
-    "BKTAsOIOQk4wxD5ASwIW4lGk8xVNknGCaxLUNV6QWBB2Fkq5bifE3VdNVLA6WbRrzfV83gSlYeXxDvgaEggBjt8";
   navigator.serviceWorker.register("services.js", {
     scope: "./",
   }); // assuming domain.com/spiteful-chat/
@@ -1235,11 +1233,12 @@ async function regWorker() {
     reg.pushManager
       .subscribe({
         userVisibleOnly: true,
-        applicationServerKey: publicKey,
+        applicationServerKey: vapidPublic ?? "",
       })
       .then(
         (sub) => {
-          my.socket.send("SUB", sub);
+          // Notifications rely on the websocket server (no POST)
+          if (my.socket.available()) my.socket.send("SUB", sub);
         },
         (err) => console.error(err),
       );

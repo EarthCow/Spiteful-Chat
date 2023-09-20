@@ -41,8 +41,8 @@ var_dump(VAPID::createVapidKeys());
 7. Create /private/spiteful-chat/vapid-keys.php
 
 ```
-<?php $vapidPublic = "BKTAsOIOQk4wxD5ASwIW4lGk8xVNknGCaxLUNV6QWBB2Fkq5bifE3VdNVLA6WbRrzfV83gSlYeXxDvgaEggBjt8";
-      $vapidPrivate = "7f8UOKMTF8KqVgolyNydpjNfB00rHTI0xMOniMS5hyw";
+<?php $vapidPublic = "vapid-generated-public-key-should-be-longer-than-private-key";
+      $vapidPrivate = "vapid-generated-private-key";
 ```
 
 8. Create /private/spiteful-chat/chats/media/ directory

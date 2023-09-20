@@ -210,38 +210,38 @@ class SpiteServer extends WebSocketServer
               ],
             ])
           );
-        } else {
-          // If the receiver is not online and they are subscribed send them a push notification
-          $sql = "SELECT `notify_sub` FROM `profiles` WHERE `username` = ?";
-          $statement = $GLOBALS["connection"]->prepare($sql);
-          $statement->bind_param("s", $receiverUsername);
-          $statement->execute();
-          $result = $statement->get_result();
-          if ($result->num_rows == 1) {
-            $receiverSub = $result->fetch_assoc()["notify_sub"];
-            if ($receiverSub != null) {
-              $sub = Subscription::create(json_decode($receiverSub, true));
+        }
+        
+        // If the receiver is subscribed send them a push notification
+        $sql = "SELECT `notify_sub` FROM `profiles` WHERE `username` = ?";
+        $statement = $GLOBALS["connection"]->prepare($sql);
+        $statement->bind_param("s", $receiverUsername);
+        $statement->execute();
+        $result = $statement->get_result();
+        if ($result->num_rows == 1) {
+          $receiverSub = $result->fetch_assoc()["notify_sub"];
+          if ($receiverSub != null) {
+            $sub = Subscription::create(json_decode($receiverSub, true));
 
-              $push = new WebPush(["VAPID" => [
-                "subject" => "Message",
-                "publicKey" => $vapidPublic,
-                "privateKey" => $vapidPrivate
-              ]]);
-              
-              $result = $push->sendOneNotification($sub, json_encode([
-                  "title" => "Message from @" . $user->username,
-                  "body" => $message["content"],
-                  "icon" => $user->picture,
-                  // "image" => $user->picture
-              ]));
-              
-              if (!$result->isSuccess()) {
-                $endpoint = $result->getRequest()->getUri()->__toString();
-                $this->stdout("Send failed {$endpoint}: {$result->getReason()}");
-                $this->stdout($result->getRequest());
-                $this->stdout($result->getResponse());
-                $this->stdout($result->isSubscriptionExpired());
-              }
+            $push = new WebPush(["VAPID" => [
+              "subject" => "Message",
+              "publicKey" => $vapidPublic,
+              "privateKey" => $vapidPrivate
+            ]]);
+            
+            $result = $push->sendOneNotification($sub, json_encode([
+                "title" => $user->name,
+                "body" => $message["content"] ?? $message["original"],
+                "icon" => $user->picture,
+                // "image" => $user->picture
+            ]));
+            
+            if (!$result->isSuccess()) {
+              $endpoint = $result->getRequest()->getUri()->__toString();
+              $this->stdout("Send failed {$endpoint}: {$result->getReason()}");
+              $this->stdout($result->getRequest());
+              $this->stdout($result->getResponse());
+              $this->stdout($result->isSubscriptionExpired());
             }
           }
         }

@@ -56,6 +56,8 @@ if ($timeBetween > (TIME_HOUR * 8)) {
 $sql = "UPDATE `profiles` SET `last_active`=CURRENT_TIMESTAMP WHERE `user_id`=$userId";
 $connection->query($sql) or die(word("error-occurred") . " CULA1"); // Code update last active 1
 
+require_once "$privateFolder/vapid-keys.php";
+
 ?>
 <!DOCTYPE html>
 <html lang="<?php echo $htmlLang; ?>">
@@ -125,7 +127,7 @@ $connection->query($sql) or die(word("error-occurred") . " CULA1"); // Code upda
   <script src="<?php echo fileLink("node_modules/sweetalert2/dist/sweetalert2.all.min.js"); ?>"></script>
   <link rel="stylesheet" href="<?php echo fileLink("assets/swal-dark.css"); ?>">
   <script>
-    <?php if ($row["username"] === null) { ?>
+    const vapidPublic = <?php echo '"' . $vapidPublic . '";'; if ($row["username"] === null) { ?>
       Swal.fire({
         title: "<?php echo word("pick-username"); ?>",
         input: "text",
