@@ -108,6 +108,7 @@ function openChat(user) {
     process: "newChat",
     data: user,
   }).then((response) => {
+    Swal.close();
     if ((response = verifyResultJSON(response))) {
       if (!response.ok) {
         Swal.fire("Error", response.statusText, "error");
