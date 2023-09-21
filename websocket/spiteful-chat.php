@@ -237,11 +237,17 @@ class SpiteServer extends WebSocketServer
             ]));
             
             if (!$result->isSuccess()) {
-              $endpoint = $result->getRequest()->getUri()->__toString();
-              $this->stdout("Send failed {$endpoint}: {$result->getReason()}");
-              $this->stdout($result->getRequest());
-              $this->stdout($result->getResponse());
-              $this->stdout($result->isSubscriptionExpired());
+              $this->stdout("Failed to push to service worker | Expired: ". $result->isSubscriptionExpired());
+              if ($result->isSubscriptionExpired()) {
+                // If the sub is expired remove it from the db
+                $sql =
+                  "UPDATE `profiles` SET `notify_sub`=NULL WHERE `username`=?";
+                $statement = $GLOBALS["connection"]->prepare($sql);
+                $statement->bind_param("s", $receiverUsername);
+                $statement->execute();
+
+                $this->updateMysqlLastUsed();
+              }
             }
           }
         }
@@ -308,15 +314,10 @@ class SpiteServer extends WebSocketServer
         unset($currentUser);
         break;
       case "SUB":
-        if (empty($parsedMsg["content"])) {
-          $this->respond($user, word("invalid-operation"));
-          return;
-        }
-
         $sql =
           "UPDATE `profiles` SET `notify_sub` = ? WHERE `user_id`=?";
         $statement = $GLOBALS["connection"]->prepare($sql);
-        $notifySub = json_encode($parsedMsg["content"]);
+        $notifySub = $parsedMsg["content"] === NULL ? NULL : json_encode($parsedMsg["content"]);
         $statement->bind_param("si", $notifySub, $user->sessId);
         $statement->execute();
 

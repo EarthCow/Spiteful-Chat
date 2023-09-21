@@ -343,11 +343,24 @@ let my = {
     modal() {
       Swal.fire({
         title: word("settings"),
-        footer:
-          '<a href="logout" style="text-decoration:none">' +
-          word("logout") +
-          '</a<!--br><button id="notificationEnabler" onclick="enableNotifications()">Enable Notifications</button>-->',
-        confirmButtonText: word("ok"),
+        html: `
+          <div>
+            <label class="switch-label">
+              <div class="switch">
+                <input id="notificationsToggle" onchange="notificationToggle(this)" type="checkbox" ${Notification.permission == "granted" && localStorage.getItem("disableNotifications") === null ? "checked" : ""}>
+                <span class="slider round"></span>
+              </div>
+              <span>Enable Notifications</span>
+            </label>
+          </div>
+        `,
+        footer: `
+          <a href="logout" style="text-decoration:none">${word("logout")}</a>
+        `,
+        showConfirmButton: false,
+        showCancelButton: true,
+        cancelButtonText: "Close",
+        didOpen: notificationsSupported
       });
     },
 
@@ -1151,7 +1164,7 @@ class MyWebSocket {
       this.socket.onopen = () => {
         this.connectionAttempts = 0;
         my.getChats();
-        if (Notification.permission == "granted") enableNotifications();
+        if (Notification.permission == "granted" && localStorage.getItem("disableNotifications") === null) enableNotifications();
         console.log(word("websocket-connected"));
         this.recurringPing = setInterval(() => {
           this.send("P", word("ping"));
@@ -1208,44 +1221,73 @@ class MyWebSocket {
 
 /* BROWSER NOTIFICATIONS */
 
+async function notificationToggle(toggle) {
+  if (toggle.checked) {
+    localStorage.removeItem("disableNotifications")
+    if (Notification.permission === "granted") {
+      regWorker();
+    } else {
+      if (!(await enableNotifications())) {
+        toggle.checked = false;
+      }
+    }
+  } else {
+    localStorage.setItem("disableNotifications", true)
+    if (Notification.permission === "granted") {
+      regWorker(false, true);
+    }
+  }
+}
+
 function enableNotifications() {
   if (Notification.permission === "default") {
-    Notification.requestPermission().then((perm) => {
+    return Notification.requestPermission().then((perm) => {
       if (Notification.permission === "granted") {
-        regWorker().catch((err) => console.error(err));
+        return regWorker()
       } else {
         console.error("Notification access has been declined.");
+        return false;
       }
     });
   } else if (Notification.permission === "granted") {
-    regWorker().catch((err) => console.error(err));
+    return regWorker()
   } else {
     console.error("Notification access has been declined.");
+    return false;
   }
 }
 
 // Register service worker
-async function regWorker() {
+async function regWorker(update = true, unsubscribe = false) {
   navigator.serviceWorker.register("services.js", {
     scope: "./",
   }); // assuming domain.com/spiteful-chat/
-  navigator.serviceWorker.ready.then((reg) => {
-    reg.pushManager
+  return await navigator.serviceWorker.ready.then(async (reg) => {
+    return await reg.pushManager
       .subscribe({
         userVisibleOnly: true,
         applicationServerKey: vapidPublic ?? "",
       })
       .then(
-        (sub) => {
-          // Notifications rely on the websocket server (no POST)
-          if (my.socket.available()) my.socket.send("SUB", sub);
+        async (sub) => {
+          if (update) {
+            // Notifications rely on the websocket server (no POST)
+            if (my.socket.available()) my.socket.send("SUB", sub);
+            return true;
+          }
+          if (unsubscribe) {
+            if (my.socket.available()) my.socket.send("SUB", null);
+            return await sub.unsubscribe().then(boolean => {
+              return boolean;
+            })
+          }
         },
         (err) => console.error(err),
       );
   });
 }
 
-const check = () => {
+const notificationsSupported = () => {
   if (!("serviceWorker" in navigator)) {
     $("#notificationEnabler").prop("disabled", true);
     console.error("Service workers not supported by browser.");
