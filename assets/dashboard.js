@@ -347,7 +347,12 @@ let my = {
           <div>
             <label class="switch-label">
               <div class="switch">
-                <input id="notificationsToggle" onchange="notificationToggle(this)" type="checkbox" ${Notification.permission == "granted" && localStorage.getItem("disableNotifications") === null ? "checked" : ""}>
+                <input id="notificationsToggle" onchange="notificationToggle(this)" type="checkbox" ${
+                  Notification.permission == "granted" &&
+                  localStorage.getItem("disableNotifications") === null
+                    ? "checked"
+                    : ""
+                }>
                 <span class="slider round"></span>
               </div>
               <span>Enable Notifications</span>
@@ -360,7 +365,7 @@ let my = {
         showConfirmButton: false,
         showCancelButton: true,
         cancelButtonText: "Close",
-        didOpen: notificationsSupported
+        didOpen: notificationsSupported,
       });
     },
 
@@ -1164,7 +1169,11 @@ class MyWebSocket {
       this.socket.onopen = () => {
         this.connectionAttempts = 0;
         my.getChats();
-        if (Notification.permission == "granted" && localStorage.getItem("disableNotifications") === null) enableNotifications();
+        if (
+          Notification.permission == "granted" &&
+          localStorage.getItem("disableNotifications") === null
+        )
+          enableNotifications();
         console.log(word("websocket-connected"));
         this.recurringPing = setInterval(() => {
           this.send("P", word("ping"));
@@ -1223,7 +1232,7 @@ class MyWebSocket {
 
 async function notificationToggle(toggle) {
   if (toggle.checked) {
-    localStorage.removeItem("disableNotifications")
+    localStorage.removeItem("disableNotifications");
     if (Notification.permission === "granted") {
       regWorker();
     } else {
@@ -1232,7 +1241,7 @@ async function notificationToggle(toggle) {
       }
     }
   } else {
-    localStorage.setItem("disableNotifications", true)
+    localStorage.setItem("disableNotifications", true);
     if (Notification.permission === "granted") {
       regWorker(false, true);
     }
@@ -1243,14 +1252,14 @@ function enableNotifications() {
   if (Notification.permission === "default") {
     return Notification.requestPermission().then((perm) => {
       if (Notification.permission === "granted") {
-        return regWorker()
+        return regWorker();
       } else {
         console.error("Notification access has been declined.");
         return false;
       }
     });
   } else if (Notification.permission === "granted") {
-    return regWorker()
+    return regWorker();
   } else {
     console.error("Notification access has been declined.");
     return false;
@@ -1277,9 +1286,9 @@ async function regWorker(update = true, unsubscribe = false) {
           }
           if (unsubscribe) {
             if (my.socket.available()) my.socket.send("SUB", null);
-            return await sub.unsubscribe().then(boolean => {
+            return await sub.unsubscribe().then((boolean) => {
               return boolean;
-            })
+            });
           }
         },
         (err) => console.error(err),

@@ -9,9 +9,8 @@ self.addEventListener("push", (evt) => {
   // Check if any client is focused and visible
   let push = true;
   self.clients.matchAll().then((clients) => {
-
     clients.forEach((client) => {
-      if (client.visibilityState === 'visible') {
+      if (client.visibilityState === "visible") {
         push = false;
         return;
       }
@@ -27,7 +26,6 @@ self.addEventListener("push", (evt) => {
       });
     }
   });
-
 });
 
 // Listens for a notification click
