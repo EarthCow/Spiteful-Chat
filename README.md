@@ -30,10 +30,25 @@ The steps to host your own version of this repository are as follows:
       $googleLoginUri = "https://your-domain/spiteful-chat/cwg"; // Link to public instance of cwg.php
 ```
 
-6. Create /private/spiteful-chat/chats/media/ directory
-7. Ensure PHP / Apache / Nginx (typically www-data) has appropriate read/write permissions to the new directories (often overlooked)
-8. If you are using Apache enable both the proxy and proxy-wstunnel modules
-9. Add the following to your SSL virtual host (Apache) or server block (Nginx) (usually port 443):
+6. Generate VAPID keys for notifications
+
+```
+require "vendor/autoload.php";
+use Minishlink\WebPush\VAPID;
+var_dump(VAPID::createVapidKeys());
+```
+
+7. Create /private/spiteful-chat/vapid-keys.php
+
+```
+<?php $vapidPublic = "vapid-generated-public-key-should-be-longer-than-private-key";
+      $vapidPrivate = "vapid-generated-private-key";
+```
+
+8. Create /private/spiteful-chat/chats/media/ directory
+9. Ensure PHP / Apache / Nginx (typically www-data) has appropriate read/write permissions to the new directories (often overlooked)
+10. If you are using Apache enable both the proxy and proxy-wstunnel modules
+11. Add the following to your SSL virtual host (Apache) or server block (Nginx) (usually port 443):
 
 For an **Apache** setup
 
@@ -64,7 +79,7 @@ location ~ /_ws_/* {
 
 Get more information about this configuration [here](https://httpd.apache.org/docs/2.4/mod/mod_proxy_wstunnel.html) for Apache or [here](https://www.nginx.com/blog/websocket-nginx/) for Nginx
 
-10. Run `$ php websocket/spiteful-chat.php` to start the websocket server
+12. Run `$ php websocket/spiteful-chat.php` to start the websocket server
 
 ## Contributing
 

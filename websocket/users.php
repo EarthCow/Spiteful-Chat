@@ -32,6 +32,8 @@ class SpiteUser extends WebSocketUser
   public $name;
   public $picture;
 
+  public $notifySub;
+
   function __construct($id, $socket)
   {
     parent::__construct($id, $socket);

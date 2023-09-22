@@ -1,64 +1,5 @@
 "use strict";
 
-var $ = jQuery;
-
-/*
-function enableNotifications() {
-  if (Notification.permission === "default") {
-    Notification.requestPermission().then(perm => {
-      if (Notification.permission === "granted") {
-        regWorker().catch(err => console.error(err));
-      } else {
-        console.error("Notification access has been declined.");
-      }
-    });
-  } else if (Notification.permission === "granted") {
-    regWorker().catch(err => console.error(err));
-  } else {
-    console.error("Notification access has been declined.");
-  }
-}
-
-// Register service worker
-async function regWorker() {
-  const publicKey = "BGaXrka4qKrrpnVk0wGn2BZHnE3m2jRVJf7tlGAI__O7SHstOhmkHmmOvKSLG9nBhAvOlsJ1h4d7_cyqQe8H0ak";
-  navigator.serviceWorker.register("services.js", {
-    scope: "./"
-  }); // assuming domain.com/spiteful-chat/
-  navigator.serviceWorker.ready
-    .then(reg => {
-      reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: publicKey
-      }).then(
-        sub => {
-          var data = new FormData();
-          data.append("sub", JSON.stringify(sub));
-          fetch("assets/push.php", {
-              method: "POST",
-              body: data
-            })
-            .then(res => res.text())
-            .then(txt => console.log(txt))
-            .catch(err => console.error(err));
-        },
-        err => console.error(err)
-      );
-    });
-}
-
-const check = () => {
-  if (!('serviceWorker' in navigator)) {
-    $("#notificationEnabler").prop("disabled", true);
-    console.error("Service workers not supported by browser.");
-  }
-  if (!('PushManager' in window)) {
-    $("#notificationEnabler").prop("disabled", true);
-    console.error("Push API not supported by browser.");
-  }
-};
-*/
-
 // Fetch translations
 var translations;
 $.getJSON("./assets/languages.php", (data) => {
@@ -403,11 +344,29 @@ let my = {
     modal() {
       Swal.fire({
         title: word("settings"),
-        footer:
-          '<a href="logout" style="text-decoration:none">' +
-          word("logout") +
-          '</a<!--br><button id="notificationEnabler" onclick="enableNotifications()">Enable Notifications</button>-->',
-        confirmButtonText: word("ok"),
+        html: `
+          <div>
+            <label class="switch-label">
+              <div class="switch">
+                <input id="notificationsToggle" onchange="notificationToggle(this)" type="checkbox" ${
+                  Notification.permission == "granted" &&
+                  localStorage.getItem("disableNotifications") === null
+                    ? "checked"
+                    : ""
+                }>
+                <span class="slider round"></span>
+              </div>
+              <span>${word("enable-notifications")}</span>
+            </label>
+          </div>
+        `,
+        footer: `
+          <a href="logout" style="text-decoration:none">${word("logout")}</a>
+        `,
+        showConfirmButton: false,
+        showCancelButton: true,
+        cancelButtonText: "Close",
+        didOpen: notificationsSupported,
       });
     },
 
@@ -1211,6 +1170,11 @@ class MyWebSocket {
       this.socket.onopen = () => {
         this.connectionAttempts = 0;
         my.getChats();
+        if (
+          Notification.permission == "granted" &&
+          localStorage.getItem("disableNotifications") === null
+        )
+          enableNotifications();
         console.log(word("websocket-connected"));
         this.recurringPing = setInterval(() => {
           this.send("P", word("ping"));
@@ -1264,6 +1228,90 @@ class MyWebSocket {
     this.init();
   }
 }
+
+/* BROWSER NOTIFICATIONS */
+
+async function notificationToggle(toggle) {
+  if (toggle.checked) {
+    localStorage.removeItem("disableNotifications");
+    if (Notification.permission === "granted") {
+      toggle.checked = regWorker();
+    } else {
+      if (!(await enableNotifications())) {
+        toggle.checked = false;
+      }
+    }
+  } else {
+    localStorage.setItem("disableNotifications", true);
+    if (Notification.permission === "granted") {
+      toggle.checked = !regWorker(false, true);
+    }
+  }
+}
+
+function enableNotifications() {
+  if (Notification.permission === "default") {
+    return Notification.requestPermission().then((perm) => {
+      if (Notification.permission === "granted") {
+        return regWorker();
+      } else {
+        console.error("Notification access has been declined.");
+        return false;
+      }
+    });
+  } else if (Notification.permission === "granted") {
+    return regWorker();
+  } else {
+    console.error("Notification access has been declined.");
+    return false;
+  }
+}
+
+// Register service worker
+async function regWorker(update = true, unsubscribe = false) {
+  navigator.serviceWorker.register("services.js", {
+    scope: "./",
+  }); // assuming domain.com/spiteful-chat/
+  return await navigator.serviceWorker.ready.then(async (reg) => {
+    if (unsubscribe) {
+      if (my.socket.available()) my.socket.send("SUB", null);
+      // Get the subscription
+      const sub = await reg.pushManager.getSubscription();
+      return sub ? await sub.unsubscribe() : false;
+    }
+    const sub = await reg.pushManager
+      .subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: vapidPublic ?? "",
+      })
+      .catch(async (err) => {
+        console.warn(err);
+        if (err.toString().includes("different applicationServerKey")) {
+          const badSub = await reg.pushManager.getSubscription();
+          if (!badSub) return false;
+          if (await badSub.unsubscribe()) return regWorker(update, unsubscribe);
+          else return false;
+        }
+        return false;
+      });
+    if (update) {
+      // Notifications rely on the websocket server (no POST)
+      if (my.socket.available()) my.socket.send("SUB", sub);
+    }
+    return true;
+  });
+}
+
+const notificationsSupported = () => {
+  if (!("serviceWorker" in navigator)) {
+    $("#notificationsToggle").prop("disabled", true);
+    console.error("Service workers not supported by browser.");
+  }
+  if (!("PushManager" in window)) {
+    $("#notificationsToggle").prop("disabled", true);
+    console.error("Push API not supported by browser.");
+  }
+};
 
 /* DOCUMENT ONLOAD FUNCTION */
 

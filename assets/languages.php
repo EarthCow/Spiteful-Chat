@@ -548,6 +548,24 @@ $words = array(
     "de_DE" => "Fehlgeschlagen",
   ),
 
+  "enable-notifications" => array(
+    "en_US" => "Enable Notifications",
+    "es_ES" => "Permitir Notificaciones",
+    "de_DE" => "Benachrichtigungen Aktivieren",
+  ),
+
+  "service-worker-failed-expired" => array(
+    "en_US" => "Failed to push to service worker | Expired: ",
+    "es_ES" => "No se pudo presionar al trabajador de servicio | Venció: ",
+    "de_DE" => "Fehler beim Pushen an den Servicemitarbeiter | Abgelaufen: ",
+  ),
+
+  "successfully-updated-records" => array(
+    "en_US" => "Successfully updated records",
+    "es_ES" => "Registros actualizados exitosamente",
+    "de_DE" => "Datensätze erfolgreich aktualisiert",
+  ),
+
 );
 
 $publicWords = [
@@ -593,6 +611,7 @@ $publicWords = [
   "message",
   "sending",
   "settings",
+  "enable-notifications",
 ];
 
 if (!isset($language)) {
@@ -610,9 +629,8 @@ if (basename(__FILE__) != basename($_SERVER["SCRIPT_FILENAME"])) {
 
   function word($string)
   {
-    global $words;
-    global $language;
-    try {
+    global $words, $language;
+    try { 
       return $words[$string][$language];
     } catch (Exception $e) { // Default to English
       return $words[$string]["en_US"];

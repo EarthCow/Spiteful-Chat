@@ -1,2 +1,10 @@
+# NPM
 node_modules/
+package.json
+package-lock.json
+# Composer
 vendor/
+composer.json
+composer.lock
+# GitHub
+.github/

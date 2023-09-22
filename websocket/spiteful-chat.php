@@ -10,8 +10,14 @@ function spiteErrorHandler($errno, $errstr, $errfile, $errline)
 set_error_handler("spiteErrorHandler");
 
 require_once "./assets/configuration.php";
+require_once "$composerFolder/autoload.php";
+
+use Minishlink\WebPush\WebPush;
+use Minishlink\WebPush\Subscription;
+
 require_once "./assets/languages.php";
 require_once "./websocket/websockets.php";
+require_once "$privateFolder/vapid-keys.php";
 require_once "$privateFolder/database.php";
 
 restore_error_handler();
@@ -50,6 +56,7 @@ class SpiteServer extends WebSocketServer
   // ran when server recieves data
   protected function process($user, $message)
   {
+    global $vapidPublic, $vapidPrivate;
     $parsedMsg = null;
     try {
       $parsedMsg = json_decode($message, true);
@@ -204,6 +211,46 @@ class SpiteServer extends WebSocketServer
             ])
           );
         }
+        
+        // If the receiver is subscribed send them a push notification
+        $sql = "SELECT `notify_sub` FROM `profiles` WHERE `username` = ?";
+        $statement = $GLOBALS["connection"]->prepare($sql);
+        $statement->bind_param("s", $receiverUsername);
+        $statement->execute();
+        $result = $statement->get_result();
+        if ($result->num_rows == 1) {
+          $receiverSub = $result->fetch_assoc()["notify_sub"];
+          if ($receiverSub != null) {
+            $sub = Subscription::create(json_decode($receiverSub, true));
+
+            $push = new WebPush(["VAPID" => [
+              "subject" => "Message",
+              "publicKey" => $vapidPublic,
+              "privateKey" => $vapidPrivate
+            ]]);
+            
+            $result = $push->sendOneNotification($sub, json_encode([
+                "title" => $user->name,
+                "body" => $message["content"] ?? $message["original"],
+                "icon" => $user->picture,
+                // "image" => $user->picture
+            ]));
+            
+            if (!$result->isSuccess()) {
+              $this->stdout(word("service-worker-failed-expired") . $result->isSubscriptionExpired());
+              if ($result->isSubscriptionExpired()) {
+                // If the sub is expired remove it from the db
+                $sql =
+                  "UPDATE `profiles` SET `notify_sub`=NULL WHERE `username`=?";
+                $statement = $GLOBALS["connection"]->prepare($sql);
+                $statement->bind_param("s", $receiverUsername);
+                $statement->execute();
+
+                $this->updateMysqlLastUsed();
+              }
+            }
+          }
+        }
 
         $this->respond($user, word("message-sent-successfully"), true, [
           "lm" => $lm,
@@ -266,6 +313,22 @@ class SpiteServer extends WebSocketServer
         }
         unset($currentUser);
         break;
+      case "SUB":
+        $sql =
+          "UPDATE `profiles` SET `notify_sub` = ? WHERE `user_id`=?";
+        $statement = $GLOBALS["connection"]->prepare($sql);
+        $notifySub = $parsedMsg["content"] === NULL ? NULL : json_encode($parsedMsg["content"]);
+        $statement->bind_param("si", $notifySub, $user->sessId);
+        $statement->execute();
+
+        $user->notifySub = $parsedMsg["content"] ?? NULL;
+
+        $this->updateMysqlLastUsed();
+
+        $this->respond($user, word("successfully-updated-records"), true, [
+          "sendId" => $parsedMsg["sendId"],
+        ]);
+        return;
       case "P":
         $this->respond($user, word("pong"), true);
         break;
