@@ -355,7 +355,7 @@ let my = {
                 }>
                 <span class="slider round"></span>
               </div>
-              <span>Enable Notifications</span>
+              <span>${word("enable-notifications")}</span>
             </label>
           </div>
         `,
@@ -1234,7 +1234,7 @@ async function notificationToggle(toggle) {
   if (toggle.checked) {
     localStorage.removeItem("disableNotifications");
     if (Notification.permission === "granted") {
-      regWorker();
+      toggle.checked = regWorker();
     } else {
       if (!(await enableNotifications())) {
         toggle.checked = false;
@@ -1243,7 +1243,7 @@ async function notificationToggle(toggle) {
   } else {
     localStorage.setItem("disableNotifications", true);
     if (Notification.permission === "granted") {
-      regWorker(false, true);
+      toggle.checked = !regWorker(false, true);
     }
   }
 }
@@ -1272,37 +1272,42 @@ async function regWorker(update = true, unsubscribe = false) {
     scope: "./",
   }); // assuming domain.com/spiteful-chat/
   return await navigator.serviceWorker.ready.then(async (reg) => {
-    return await reg.pushManager
+    if (unsubscribe) {
+      if (my.socket.available()) my.socket.send("SUB", null);
+      // Get the subscription
+      const sub = await reg.pushManager.getSubscription();
+      return sub ? await sub.unsubscribe() : false;
+    }
+    const sub = await reg.pushManager
       .subscribe({
         userVisibleOnly: true,
         applicationServerKey: vapidPublic ?? "",
       })
-      .then(
-        async (sub) => {
-          if (update) {
-            // Notifications rely on the websocket server (no POST)
-            if (my.socket.available()) my.socket.send("SUB", sub);
-            return true;
-          }
-          if (unsubscribe) {
-            if (my.socket.available()) my.socket.send("SUB", null);
-            return await sub.unsubscribe().then((boolean) => {
-              return boolean;
-            });
-          }
-        },
-        (err) => console.error(err),
-      );
+      .catch(async (err) => {
+        console.warn(err);
+        if (err.toString().includes("different applicationServerKey")) {
+          const badSub = await reg.pushManager.getSubscription();
+          if (!badSub) return false;
+          if (await badSub.unsubscribe()) return regWorker(update, unsubscribe);
+          else return false;
+        }
+        return false;
+      });
+    if (update) {
+      // Notifications rely on the websocket server (no POST)
+      if (my.socket.available()) my.socket.send("SUB", sub);
+    }
+    return true;
   });
 }
 
 const notificationsSupported = () => {
   if (!("serviceWorker" in navigator)) {
-    $("#notificationEnabler").prop("disabled", true);
+    $("#notificationsToggle").prop("disabled", true);
     console.error("Service workers not supported by browser.");
   }
   if (!("PushManager" in window)) {
-    $("#notificationEnabler").prop("disabled", true);
+    $("#notificationsToggle").prop("disabled", true);
     console.error("Push API not supported by browser.");
   }
 };

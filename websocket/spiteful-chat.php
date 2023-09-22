@@ -237,7 +237,7 @@ class SpiteServer extends WebSocketServer
             ]));
             
             if (!$result->isSuccess()) {
-              $this->stdout("Failed to push to service worker | Expired: ". $result->isSubscriptionExpired());
+              $this->stdout(word("service-worker-failed-expired") . $result->isSubscriptionExpired());
               if ($result->isSubscriptionExpired()) {
                 // If the sub is expired remove it from the db
                 $sql =
@@ -321,11 +321,11 @@ class SpiteServer extends WebSocketServer
         $statement->bind_param("si", $notifySub, $user->sessId);
         $statement->execute();
 
-        $user->notifySub = $parsedMsg["content"];
+        $user->notifySub = $parsedMsg["content"] ?? NULL;
 
         $this->updateMysqlLastUsed();
 
-        $this->respond($user, "Successfully updated records", true, [
+        $this->respond($user, word("successfully-updated-records"), true, [
           "sendId" => $parsedMsg["sendId"],
         ]);
         return;
