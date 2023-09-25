@@ -473,8 +473,8 @@ class Chat {
         if (!message.type) {
           my.openChat.username = this.username;
           // Generate the html text message
-          var convertedMsg = convertHandle(
-            convertUri(message.content.replaceAll("\n", "<br>")),
+          var convertedMsg = handleMsgConversions(
+            message.content.replaceAll("\n", "<br>"),
           );
           messageElements += `
               <div class="messageWrapper${
@@ -682,8 +682,8 @@ class Chat {
     `);
 
     // Ensures shift enter whitespace is html compliant
-    let visualMsg = convertHandle(
-      convertUri(escapeHtml(message).replaceAll("\n", "<br>")),
+    let visualMsg = handleMsgConversions(
+      escapeHtml(message).replaceAll("\n", "<br>"),
     );
     $newMsg.find("span").html(visualMsg);
 
@@ -799,8 +799,8 @@ class Chat {
     // If the message doesn't have a subsequent type variable it is NOT media
     if (!message.type) {
       // Generate the html text message
-      var visualMsg = convertHandle(
-        convertUri(message.content.replaceAll("\n", "<br>")),
+      var visualMsg = handleMsgConversions(
+        message.content.replaceAll("\n", "<br>"),
       );
       document.title = "💬 " + word("dashboard");
       $newMsg = $(`
@@ -1404,17 +1404,61 @@ const escapeHtml = (unsafe) => {
     .replaceAll("'", "&#039;");
 };
 
+function handleMsgConversions(msg) {
+  return convertHandle(convertUri(convertMedia(msg)));
+}
+
+function convertMedia(text) {
+  var imageExp = /(https?:\/\/[^\s]+?\.(?:jpg|jpeg|png|gif|bmp|svg|webp))/gi,
+    imageMatches = text.match(imageExp),
+    videoExp = /(https?:\/\/[^\s]+?\.(?:mp4|webm|ogg|avi|mov|flv|wmv))/gi,
+    videoMatches = text.match(videoExp),
+    onlyMediaUris = !/\S/.test(
+      text.replace(imageExp, "").replace(videoExp, ""),
+    );
+
+  if (imageMatches || videoMatches) {
+    function replaceVideos(link) {
+      var extension = link.split(".").pop();
+      return `<video controls><source src="${link}" type="video/${extension}"></video>`;
+    }
+    if (onlyMediaUris) {
+      text = text
+        .replace(
+          imageExp,
+          `
+        <img src="$1" />
+      `,
+        )
+        .replace(videoExp, replaceVideos);
+    } else {
+      if (imageMatches) {
+        var images = imageMatches.map(function (link) {
+          return `<img src="${link}" />`;
+        });
+        text = text + "<br>" + images.join("<br>");
+      }
+      if (videoMatches) {
+        var videos = videoMatches.map(replaceVideos);
+        text = text + "<br>" + videos.join("<br>");
+      }
+    }
+  }
+
+  return text;
+}
+
 function convertUri(text) {
   // Converts string only
   // Regex may be changed to do maybe www.google.com and not just https://www.google.com or https://google.com
   // exp2 may be trying to do that but it just doesn't
   var exp =
-    /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/gi;
+    /(?<!")(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])(?!")/gi;
   var ctext = text.replaceAll(
     exp,
     '<a target="_blank" style="text-decoration:none;font-weight:bold" href="$1">$1</a>',
   );
-  var exp2 = /(^|[^\/])(www\.[\S]+(\b|$))/gim;
+  var exp2 = /(?<!")(^|[^\/])(www\.[\S]+(\b|$))(?!")/gim;
   return ctext.replaceAll(
     exp2,
     '$1<a target="_blank" style="text-decoration:none;font-weight:bold" href="https://$2">$2</a>',
