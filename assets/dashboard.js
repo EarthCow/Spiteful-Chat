@@ -1412,33 +1412,30 @@ function convertMedia(text) {
   var imageExp = /(https?:\/\/[^\s]+?\.(?:jpg|jpeg|png|gif|bmp|svg|webp))/gi,
     imageMatches = text.match(imageExp),
     videoExp = /(https?:\/\/[^\s]+?\.(?:mp4|webm|ogg|avi|mov|flv|wmv))/gi,
-    videoMatches = text.match(videoExp),
-    onlyMediaUris = !/\S/.test(
-      text.replace(imageExp, "").replace(videoExp, ""),
-    );
+    videoMatches = text.match(videoExp);
 
   if (imageMatches || videoMatches) {
     function replaceVideos(link) {
       var extension = link.split(".").pop();
       return `<video controls><source src="${link}" type="video/${extension}"></video>`;
     }
-    if (onlyMediaUris) {
-      text = text
-        .replace(
-          imageExp,
-          `
-        <img src="$1" />
-      `,
-        )
-        .replace(videoExp, replaceVideos);
+    // If an image link is sent by itself it will be replaced with an embed
+    if (
+      imageMatches.length == 1 &&
+      !/\S/.test(text.replace(imageMatches[0], ""))
+    ) {
+      text = text.replace(imageExp, `<img src="$1" />`);
     } else {
       if (imageMatches) {
+        // Ensures no repeats and a max of five - Will make this a changable preference later
+        imageMatches = [...new Set(imageMatches)].slice(0, 5);
         var images = imageMatches.map(function (link) {
           return `<img src="${link}" />`;
         });
         text = text + "<br>" + images.join("<br>");
       }
       if (videoMatches) {
+        videoMatches = [...new Set(videoMatches)].slice(0, 5);
         var videos = videoMatches.map(replaceVideos);
         text = text + "<br>" + videos.join("<br>");
       }
