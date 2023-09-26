@@ -391,13 +391,6 @@ input:checked + .slider:before {
   border-radius: 0 12px 12px 0;
 }
 
-.messageWrapper > img {
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-}
-
 /* Recipient Top Block */
 
 .recipientBlock {
@@ -486,6 +479,11 @@ input:checked + .slider:before {
 }
 
 .messageWrapper > img {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+
   border-radius: 50%;
   width: 1.8rem;
   height: 1.8rem;
@@ -500,7 +498,7 @@ input:checked + .slider:before {
 
 .messageWrapper span img,
 .messageWrapper span video {
-  width: 100%;
+  max-width: 100%;
   pointer-events: auto !important;
 }
 
