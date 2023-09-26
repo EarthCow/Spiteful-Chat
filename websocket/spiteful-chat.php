@@ -25,6 +25,7 @@ restore_error_handler();
 class SpiteServer extends WebSocketServer
 {
   private $mysqlLastUsed;
+  private $userClients = [];
 
   // $maxBufferSize is 1MB
   function __construct($addr, $port, $bufferLength = 1048576)
@@ -125,22 +126,22 @@ class SpiteServer extends WebSocketServer
           $message["content"] = htmlspecialchars($message["content"]);
         }
 
+        $sql =
+          "SELECT `user_id`, `name`, `picture` FROM `profiles` WHERE `username`=?";
+        $statement = $GLOBALS["connection"]->prepare($sql);
+        $statement->bind_param("s", $receiverUsername);
+        $statement->execute();
+        $result = $statement->get_result();
+
+        if ($result->num_rows == 0) {
+          $this->respond($user, word("invalid-operation"));
+          return;
+        }
+
+        $receiverRow = $result->fetch_assoc();
+        $receiverId = $receiverRow["user_id"];
+
         if (!$message["type"]) {
-          $sql =
-            "SELECT `user_id`, `name`, `picture` FROM `profiles` WHERE `username`=?";
-          $statement = $GLOBALS["connection"]->prepare($sql);
-          $statement->bind_param("s", $receiverUsername);
-          $statement->execute();
-          $result = $statement->get_result();
-
-          if ($result->num_rows == 0) {
-            $this->respond($user, word("invalid-operation"));
-            return;
-          }
-
-          $receiverRow = $result->fetch_assoc();
-          $receiverId = $receiverRow["user_id"];
-
           $sql = "SELECT chat_id FROM chats WHERE (sender = $user->sessId AND receiver = $receiverId) OR (sender = $receiverId AND receiver = $user->sessId)";
           $result = $GLOBALS["connection"]->query($sql);
 
@@ -149,18 +150,16 @@ class SpiteServer extends WebSocketServer
             if (
               strcasecmp($receiverUsername, $user->username) == 0
             ) {
-              $response["statusText"] = word("chat-self-error");
-              die(json_encode($response));
+              $this->respond($user, word("chat-self-error"));
+              return;
             }
 
             $sql = "INSERT INTO `chats` (`sender`, `receiver`) VALUES ($user->sessId, $receiverId);";
             $result = $GLOBALS["connection"]->query($sql);
 
             if (!$result) {
-              $response = [
-                "statusText" => word("conversation-creation-fail"),
-              ];
-              die(json_encode($response));
+              $this->respond($user, word("conversation-creation-fail"));
+              return;
             }
             $chatId = $GLOBALS["connection"]->insert_id;
           } else {
@@ -185,31 +184,40 @@ class SpiteServer extends WebSocketServer
         $this->updateMysqlLastUsed();
 
         $lm = date("m/d/Y h:i:s");
-
-        $receiver = false;
-        foreach ($this->users as $currentUser) {
-          if ($currentUser->username === $receiverUsername) {
-            $receiver = $currentUser;
-            break;
-          }
-        }
-        unset($currentUser);
-
         $message["date"] = $lm;
 
-        if ($receiver) {
-          $this->send(
-            $receiver,
-            json_encode([
-              "ok" => true,
-              "sender" => $user->username,
-              "message" => $message,
-              "info" => [
-                "name" => $user->name,
-                "picture" => $user->picture,
-              ],
-            ])
-          );
+        // Send the message to the user's other clients if there are any
+        if (count($this->userClients[$user->sessId]) > 1) {
+          foreach ($this->userClients[$user->sessId] as $client) {
+            if ($client->id == $user->id) continue;
+            $this->send(
+              $client,
+              json_encode([
+                "ok" => true,
+                "sender" => $user->username,
+                "sentTo" => $receiverUsername,
+                "message" => $message,
+              ])
+            );
+          }
+        }
+
+        // Send the message to all the receiver's clients if there are any
+        if (isset($this->userClients[$receiverId])) {
+          foreach ($this->userClients[$receiverId] as $client) {
+            $this->send(
+              $client,
+              json_encode([
+                "ok" => true,
+                "sender" => $user->username,
+                "message" => $message,
+                "info" => [
+                  "name" => $user->name,
+                  "picture" => $user->picture,
+                ],
+              ])
+            );
+          }
         }
         
         // If the receiver is subscribed send them a push notification
@@ -262,7 +270,7 @@ class SpiteServer extends WebSocketServer
         break;
       case "C":
         $sql = "
-          SELECT chats.chat_id, chats.last_message, chats.modified, profiles.username, profiles.name, profiles.picture
+          SELECT chats.chat_id, chats.last_message, chats.modified, profiles.user_id, profiles.username, profiles.name, profiles.picture
           FROM `chats`
           JOIN `profiles`
           ON IF(chats.sender = $user->sessId, chats.receiver = profiles.user_id, chats.sender = profiles.user_id)
@@ -276,13 +284,9 @@ class SpiteServer extends WebSocketServer
 
         // Pass $chat as a reference to add the status key
         foreach ($row as &$chat) {
-          foreach ($this->users as $currentUser) {
-            if ($currentUser->username === $chat["username"]) {
-              $chat["status"] = "online";
-              break;
-            }
+          if (isset($this->userClients[$chat["user_id"]]) && !empty($this->userClients[$chat["user_id"]])) {
+            $chat["status"] = "online";
           }
-          unset($currentUser);
         }
         unset($chat);
 
@@ -298,20 +302,35 @@ class SpiteServer extends WebSocketServer
           return;
         }
 
-        foreach ($this->users as $currentUser) {
-          if ($currentUser->username === $parsedMsg["content"]) {
-            $this->send(
-              $user,
-              json_encode([
-                "ok" => true,
-                "username" => $currentUser->username,
-                "status" => "online",
-              ])
-            );
-            break;
-          }
+        $sql =
+          "SELECT `user_id`, `username` FROM `profiles` WHERE `username`=?";
+        $statement = $GLOBALS["connection"]->prepare($sql);
+        $statement->bind_param("s", $parsedMsg["content"]);
+        $statement->execute();
+        $result = $statement->get_result();
+        
+        $this->updateMysqlLastUsed();
+        
+        if ($result->num_rows == 0) {
+          $this->respond($user, word("invalid-operation"));
+          return;
         }
-        unset($currentUser);
+
+        $requestedRow = $result->fetch_assoc();
+        $requestedId = $requestedRow["user_id"];
+
+
+        if (isset($this->userClients[$requestedId]) && !empty($userClients[$requestedId])) {
+          $this->send(
+            $user,
+            json_encode([
+              "ok" => true,
+              "username" => $requestedRow["username"],
+              "status" => "online",
+            ])
+          );
+        }
+
         break;
       case "SUB":
         $sql =
@@ -415,7 +434,7 @@ class SpiteServer extends WebSocketServer
 
     // When status is added as a table column "appear offline" would negate this entire logic
     $sql = "
-      SELECT profiles.username
+      SELECT profiles.user_id
       FROM `chats`
       JOIN `profiles`
       ON IF(chats.sender = $sessId, chats.receiver = profiles.user_id, chats.sender = profiles.user_id)
@@ -428,17 +447,16 @@ class SpiteServer extends WebSocketServer
     $row = $result->fetch_all(MYSQLI_ASSOC);
 
     foreach ($row as $chat) {
-      foreach ($this->users as $currentUser) {
-        if ($currentUser->username === $chat["username"]) {
+      if (isset($this->userClients[$chat["user_id"]])) {
+        foreach ($this->userClients[$chat["user_id"]] as $client) {
           $this->send(
-            $currentUser,
+            $client,
             json_encode([
               "ok" => true,
               "username" => $user->username,
               "status" => "online", // This will eventually reflect an option within the profiles table for now "online" is fine
             ])
           );
-          break;
         }
       }
     }
@@ -446,17 +464,22 @@ class SpiteServer extends WebSocketServer
 
   protected function connected($user)
   {
+    if (!isset($this->userClients[$user->sessId])) $this->userClients[$user->sessId] = [];
+    $this->userClients[$user->sessId][$user->id] = $user;
     $this->stdout("\033[36m[i] \033[39m" . word("user-connected") . " - " . word("count") . ": " . count($this->users));
   }
 
   protected function closed($user)
   {
+    unset($this->userClients[$user->sessId][$user->id]);
+    if (empty($this->userClients[$user->sessId])) unset($this->userClients[$user->sessId]);
     $this->stdout("\033[36m[i] \033[39m" . word("user-disconnected") . " - " . word("count") . ": " . count($this->users));
     if ($user->username == null) {
       return;
     }
+    if (!empty($this->userClients[$user->sessId])) return;
     $sql = "
-      SELECT profiles.username
+      SELECT profiles.user_id
       FROM `chats`
       JOIN `profiles`
       ON IF(chats.sender = $user->sessId, chats.receiver = profiles.user_id, chats.sender = profiles.user_id)
@@ -469,10 +492,10 @@ class SpiteServer extends WebSocketServer
     $row = $result->fetch_all(MYSQLI_ASSOC);
 
     foreach ($row as $chat) {
-      foreach ($this->users as $currentUser) {
-        if ($currentUser->username === $chat["username"]) {
+      if (isset($this->userClients[$chat["user_id"]])) {
+        foreach ($this->userClients[$chat["user_id"]] as $client) {
           $this->send(
-            $currentUser,
+            $client,
             json_encode([
               "ok" => true,
               "username" => $user->username,
