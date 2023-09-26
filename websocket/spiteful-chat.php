@@ -126,22 +126,22 @@ class SpiteServer extends WebSocketServer
           $message["content"] = htmlspecialchars($message["content"]);
         }
 
+        $sql =
+          "SELECT `user_id`, `name`, `picture` FROM `profiles` WHERE `username`=?";
+        $statement = $GLOBALS["connection"]->prepare($sql);
+        $statement->bind_param("s", $receiverUsername);
+        $statement->execute();
+        $result = $statement->get_result();
+
+        if ($result->num_rows == 0) {
+          $this->respond($user, word("invalid-operation"));
+          return;
+        }
+
+        $receiverRow = $result->fetch_assoc();
+        $receiverId = $receiverRow["user_id"];
+
         if (!$message["type"]) {
-          $sql =
-            "SELECT `user_id`, `name`, `picture` FROM `profiles` WHERE `username`=?";
-          $statement = $GLOBALS["connection"]->prepare($sql);
-          $statement->bind_param("s", $receiverUsername);
-          $statement->execute();
-          $result = $statement->get_result();
-
-          if ($result->num_rows == 0) {
-            $this->respond($user, word("invalid-operation"));
-            return;
-          }
-
-          $receiverRow = $result->fetch_assoc();
-          $receiverId = $receiverRow["user_id"];
-
           $sql = "SELECT chat_id FROM chats WHERE (sender = $user->sessId AND receiver = $receiverId) OR (sender = $receiverId AND receiver = $user->sessId)";
           $result = $GLOBALS["connection"]->query($sql);
 
@@ -150,18 +150,16 @@ class SpiteServer extends WebSocketServer
             if (
               strcasecmp($receiverUsername, $user->username) == 0
             ) {
-              $response["statusText"] = word("chat-self-error");
-              die(json_encode($response));
+              $this->respond($user, word("chat-self-error"));
+              return;
             }
 
             $sql = "INSERT INTO `chats` (`sender`, `receiver`) VALUES ($user->sessId, $receiverId);";
             $result = $GLOBALS["connection"]->query($sql);
 
             if (!$result) {
-              $response = [
-                "statusText" => word("conversation-creation-fail"),
-              ];
-              die(json_encode($response));
+              $this->respond($user, word("conversation-creation-fail"));
+              return;
             }
             $chatId = $GLOBALS["connection"]->insert_id;
           } else {
@@ -187,6 +185,22 @@ class SpiteServer extends WebSocketServer
 
         $lm = date("m/d/Y h:i:s");
         $message["date"] = $lm;
+
+        // Send the message to the user's other clients if there are any
+        if (count($this->userClients[$user->sessId]) > 1) {
+          foreach ($this->userClients[$user->sessId] as $client) {
+            if ($client->id == $user->id) continue;
+            $this->send(
+              $client,
+              json_encode([
+                "ok" => true,
+                "sender" => $user->username,
+                "sentTo" => $receiverUsername,
+                "message" => $message,
+              ])
+            );
+          }
+        }
 
         // Send the message to all the receiver's clients if there are any
         if (isset($this->userClients[$receiverId])) {

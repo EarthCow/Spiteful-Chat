@@ -793,19 +793,21 @@ class Chat {
     }
   }
 
-  receive(message) {
+  receive(message, mine = false) {
     let $newMsg;
     let $lastMsgSpan = this.$element.find(".lastMsg");
+    if (!mine) document.title = "💬 " + word("dashboard");
     // If the message doesn't have a subsequent type variable it is NOT media
     if (!message.type) {
       // Generate the html text message
       var visualMsg = convertHandle(
         convertUri(message.content.replaceAll("\n", "<br>")),
       );
-      document.title = "💬 " + word("dashboard");
       $newMsg = $(`
-        <div class="messageWrapper" title="${message.date}">
-            <img src="${this.picture}">
+        <div class="messageWrapper${mine ? " myMessage" : ""}" title="${
+          message.date
+        }">
+            <img src="${mine ? my.picture : this.picture}">
             <span>${visualMsg}</span>
         </div>
       `);
@@ -819,7 +821,7 @@ class Chat {
           message.src,
           message.date,
           message.original,
-          false,
+          mine,
         ),
       );
       // Set last message
@@ -1110,6 +1112,14 @@ function receiveMessage(msg) {
   }
 
   if (parsed.sender) {
+    if (parsed.sender == my.username) {
+      if (parsed.sentTo !== undefined) {
+        if (my.chats[parsed.sentTo]) {
+          my.chats[parsed.sentTo].receive(parsed.message, true);
+        }
+      }
+      return;
+    }
     if (my.chats[parsed.sender]) {
       my.chats[parsed.sender].receive(parsed.message);
     } else {
