@@ -4,14 +4,16 @@
 var translations;
 $.getJSON("./assets/languages.php", (data) => {
   translations = data;
-}).done(() => {
-  document.onmousemove = function () {
-    // Revert to default title
-    document.title = word("dashboard");
-  };
-}).fail(() => {
-  console.error("Translations failed to load");
-});
+})
+  .done(() => {
+    document.onmousemove = function () {
+      // Revert to default title
+      document.title = word("dashboard");
+    };
+  })
+  .fail(() => {
+    console.error("Translations failed to load");
+  });
 
 function word(word) {
   return translations[word];
@@ -26,11 +28,12 @@ const SwalLoading = Swal.mixin({
 });
 
 function openChat(user) {
-  if (my.openChat && my.openChat.username == user) {
+  const userLower = user.toLowerCase();
+  if (my.openChat && my.openChat.username.toLowerCase() == user) {
     // Do nothing if the username is the currently opened chat
     return;
   }
-  if (user == my.username) {
+  if (userLower == my.username.toLowerCase()) {
     Swal.fire({
       title: word("this-is-you"),
       text: word("cannot-message-yourself"),
