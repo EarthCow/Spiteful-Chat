@@ -423,7 +423,9 @@ class Chat {
     }
 
     let msg = `
-      <div class="messageWrapper${mine ? " myMessage" : ""}" title="${date}">
+      <div id="msg-${this.msgId}" class="messageWrapper${
+        mine ? " myMessage" : ""
+      }" title="${date}">
           <img src="${mine ? my.picture : this.picture}">
           <span>${spanContent}</span>
       </div>
@@ -463,6 +465,7 @@ class Chat {
           icon: "error",
           confirmButtonText: word("ok"),
         });
+        return;
       }
 
       // Set variable for the html messages to be iterated and appended to
@@ -475,9 +478,10 @@ class Chat {
           // Generate the html text message
           var convertedMsg = handleMsgConversions(
             message.content.replaceAll("\n", "<br>"),
+            this.msgId,
           );
           messageElements += `
-              <div class="messageWrapper${
+              <div id="msg-${this.msgId}" class="messageWrapper${
                 message.mine ? " myMessage" : ""
               }" title="${message.date}">
                   <img src="${message.mine ? my.picture : this.picture}">
@@ -550,10 +554,7 @@ class Chat {
         // Render the messages and remove the loader from .messages
         $(".messages").html(messageElements);
       }
-      $(".messageWrapper span img, .messageWrapper span video").css(
-        "max-height",
-        $(".messagesContainer").height(),
-      );
+      setMediaHeight();
 
       this.hasAllMessages = messageElements.length < 25;
 
@@ -628,12 +629,7 @@ class Chat {
 
     setTimeout(function () {
       $(".recipientBlock").show(400);
-      $(".messagesContainer").show(500, function () {
-        $(".messageWrapper span img, .messageWrapper span video").css(
-          "max-height",
-          $(".messagesContainer").height(),
-        );
-      });
+      $(".messagesContainer").show(500, setMediaHeight);
       $(".messageBar").show(400);
       $(".msg").focus();
     }, 500);
@@ -673,6 +669,7 @@ class Chat {
     fixMessageBoxHeight($msgBox);
 
     let $newMsg = $(document.createElement("div"));
+    $newMsg[0].id = "msg-" + this.msgId;
     $newMsg[0].className = "messageWrapper myMessage";
     $newMsg.css("opacity", 0.5);
 
@@ -684,6 +681,7 @@ class Chat {
     // Ensures shift enter whitespace is html compliant
     let visualMsg = handleMsgConversions(
       escapeHtml(message).replaceAll("\n", "<br>"),
+      this.msgId,
     );
     $newMsg.find("span").html(visualMsg);
 
@@ -802,11 +800,12 @@ class Chat {
       // Generate the html text message
       var visualMsg = handleMsgConversions(
         message.content.replaceAll("\n", "<br>"),
+        this.msgId,
       );
       $newMsg = $(`
-        <div class="messageWrapper${mine ? " myMessage" : ""}" title="${
-          message.date
-        }">
+        <div id="msg-${this.msgId}" class="messageWrapper${
+          mine ? " myMessage" : ""
+        }" title="${message.date}">
             <img src="${mine ? my.picture : this.picture}">
             <span>${visualMsg}</span>
         </div>
@@ -835,12 +834,11 @@ class Chat {
 
     if (my.openChat === null || my.openChat.username != this.username) return;
 
+    this.msgId++;
+
     // Render the messages and remove the loader from .messages
     $(".messages").append($newMsg);
-    $(".messageWrapper span img, .messageWrapper span video").css(
-      "max-height",
-      $(".messagesContainer").height(),
-    );
+    setMediaHeight();
   }
 }
 
@@ -1364,12 +1362,7 @@ $(function () {
   });
 });
 
-window.onresize = function () {
-  $(".messageWrapper span img, .messageWrapper span video").css(
-    "max-height",
-    $(".messagesContainer").height(),
-  );
-};
+window.onresize = setMediaHeight;
 
 function actallyHideMsgBlock() {
   $(".profiles-block").width("calc(250px + 50vw)");
@@ -1403,6 +1396,13 @@ function fixMessageBoxHeight(msgBox) {
   } else msgBox.css("overflow-y", "hidden");
 }
 
+function setMediaHeight() {
+  $(".messageWrapper span img, .messageWrapper span video").css(
+    "max-height",
+    $(".messagesContainer").height(),
+  );
+}
+
 /* MESSAGE FORMATTING FUNCTIONS */
 
 const escapeHtml = (unsafe) => {
@@ -1414,45 +1414,74 @@ const escapeHtml = (unsafe) => {
     .replaceAll("'", "&#039;");
 };
 
-function handleMsgConversions(msg) {
-  return convertHandle(convertUri(convertMedia(msg)));
+function handleMsgConversions(msg, msgId) {
+  convertMedia(msg, msgId);
+  return convertHandle(convertUri(msg));
 }
 
-function convertMedia(text) {
-  var imageExp = /(https?:\/\/[^\s]+?\.(?:jpg|jpeg|png|gif|bmp|svg|webp))/gi,
+function convertMedia(text, msgId) {
+  var linkExp =
+      /\bhttps?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,4}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g,
+    linkMatches = text.match(linkExp),
+    imageExp = /(https?:\/\/[^\s]+?\.(?:jpg|jpeg|png|gif|bmp|svg|webp))/gi,
     imageMatches = text.match(imageExp),
     videoExp = /(https?:\/\/[^\s]+?\.(?:mp4|webm|ogg|avi|mov|flv|wmv))/gi,
     videoMatches = text.match(videoExp);
 
-  if (imageMatches || videoMatches) {
-    function replaceVideos(link) {
-      var extension = link.split(".").pop();
-      return `<video controls><source src="${link}" type="video/${extension}"></video>`;
-    }
-    // If an image link is sent by itself it will be replaced with an embed
-    if (
-      imageMatches.length == 1 &&
-      !/\S/.test(text.replace(imageMatches[0], ""))
-    ) {
-      text = text.replace(imageExp, `<img src="$1" />`);
-    } else {
-      if (imageMatches) {
-        // Ensures no repeats and a max of five - Will make this a changable preference later
-        imageMatches = [...new Set(imageMatches)].slice(0, 5);
-        var images = imageMatches.map(function (link) {
-          return `<img src="${link}" />`;
-        });
-        text = text + "<br>" + images.join("<br>");
+  if (linkMatches) {
+    // Ensures no repeats and a max of five - Will make this a changable preference later
+    linkMatches = [...new Set(linkMatches)].slice(0, 5);
+    linkMatches.forEach((link) => {
+      if (!videoMatches || !videoMatches.includes(link)) {
+        testImage(link)
+          .then((status) => {
+            if (status == "success") {
+              let $msgEl = $("#msg-" + msgId + " span");
+              if ($msgEl[0]) {
+                if (!/\S/.test($msgEl.text().replace(link, "")))
+                  $msgEl.text("");
+                else $msgEl.append("<br>");
+                $msgEl.append(`
+                  <img src="${link}" />
+                `);
+                setMediaHeight();
+              }
+            }
+          })
+          .catch((ignored) => {
+            testVideo(link)
+              .then((status) => {
+                if (status == "success") {
+                  let $msgEl = $("#msg-" + msgId + " span");
+                  if ($msgEl[0]) {
+                    $msgEl.append(`
+                      <br>
+                      <video controls src="${link}"></video>
+                    `);
+                    setMediaHeight();
+                  }
+                }
+              })
+              .catch((ignored) => {});
+          });
+      } else if (!imageMatches || !imageMatches.includes(link)) {
+        testVideo(link)
+          .then((status) => {
+            if (status == "success") {
+              let $msgEl = $("#msg-" + msgId + " span");
+              if ($msgEl[0]) {
+                $msgEl.append(`
+                  <br>
+                  <video controls src="${link}"></video>
+                `);
+                setMediaHeight();
+              }
+            }
+          })
+          .catch((ignored) => {});
       }
-      if (videoMatches) {
-        videoMatches = [...new Set(videoMatches)].slice(0, 5);
-        var videos = videoMatches.map(replaceVideos);
-        text = text + "<br>" + videos.join("<br>");
-      }
-    }
+    });
   }
-
-  return text;
 }
 
 function convertUri(text) {
@@ -1479,6 +1508,50 @@ function convertHandle(text) {
     return `<a onclick="openChat('${username}')" href="javascript:void(0)" style="text-decoration:none;font-weight:bold">@${username}</a>`;
   }
   return text.replace(mentionRegex, replaceMentions);
+}
+
+function testImage(url, timeout = 5000) {
+  return new Promise(function (resolve, reject) {
+    var timer,
+      img = new Image();
+    img.onerror = img.onabort = function () {
+      clearTimeout(timer);
+      reject("error");
+    };
+    img.onload = function () {
+      clearTimeout(timer);
+      resolve("success");
+    };
+    timer = setTimeout(function () {
+      // reset .src to invalid URL so it stops previous
+      // loading, but doesn't trigger new load
+      img.src = "//!!!!/test.jpg";
+      reject("timeout");
+    }, timeout);
+    img.src = url;
+  });
+}
+
+function testVideo(url, timeout = 10000) {
+  return new Promise(function (resolve, reject) {
+    var timer,
+      video = document.createElement("video");
+    video.onerror = function () {
+      clearTimeout(timer);
+      reject("error");
+    };
+    video.oncanplay = function () {
+      clearTimeout(timer);
+      resolve("success");
+    };
+    timer = setTimeout(function () {
+      // reset .src to invalid URL so it stops previous
+      // loading, but doesn't trigger new load
+      video.src = "//!!!!/test.mp4";
+      reject("timeout");
+    }, timeout);
+    video.src = url;
+  });
 }
 
 function previewMedia(type, src) {}
