@@ -4,6 +4,11 @@
 var translations;
 $.getJSON("./assets/languages.php", (data) => {
   translations = data;
+}).done(() => {
+  document.onmousemove = function () {
+    // Revert to default title
+    document.title = word("dashboard");
+  };
 }).fail(() => {
   console.error("Translations failed to load");
 });
@@ -11,11 +16,6 @@ $.getJSON("./assets/languages.php", (data) => {
 function word(word) {
   return translations[word];
 }
-
-document.onmousemove = function () {
-  // Revert to default title
-  document.title = word("dashboard");
-};
 
 const SwalLoading = Swal.mixin({
   title: "Loading...",
