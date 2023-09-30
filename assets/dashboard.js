@@ -1174,22 +1174,25 @@ class MyWebSocket {
   }
 
   init() {
-    const host =
-      "wss://" + window.location.hostname + "/_ws_/" + this.credentials;
+    const host = "wss://" + window.location.hostname + "/_ws_/";
     try {
       this.socket = new WebSocket(host);
       this.socket.onopen = () => {
         this.connectionAttempts = 0;
-        my.getChats();
-        if (
-          Notification.permission == "granted" &&
-          localStorage.getItem("disableNotifications") === null
-        )
-          enableNotifications();
+        this.send("SESS", this.credentials, () => {
+          console.log(word("validated-session"));
+          // Anything that requires the websocket
+          my.getChats();
+          if (
+            Notification.permission == "granted" &&
+            localStorage.getItem("disableNotifications") === null
+          )
+            enableNotifications();
+          this.recurringPing = setInterval(() => {
+            this.send("P", word("ping"));
+          }, 4000);
+        });
         console.log(word("websocket-connected"));
-        this.recurringPing = setInterval(() => {
-          this.send("P", word("ping"));
-        }, 4000);
       };
       this.socket.onmessage = receiveMessage;
       this.socket.onclose = () => {
@@ -1346,7 +1349,7 @@ $(function () {
     },
     function (result) {
       const parsed = verifyResultJSON(result);
-      my.socket = new MyWebSocket(`${parsed.id}.${parsed.token}`);
+      my.socket = new MyWebSocket(parsed);
       my.socket.init();
     },
   );

@@ -25,6 +25,8 @@ class WebSocketUser
 
 class SpiteUser extends WebSocketUser
 {
+  public $created;
+
   public $sessId;
   public $sessToken;
 
@@ -37,5 +39,6 @@ class SpiteUser extends WebSocketUser
   function __construct($id, $socket)
   {
     parent::__construct($id, $socket);
+    $this->created = time();
   }
 }

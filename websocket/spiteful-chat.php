@@ -66,6 +66,16 @@ class SpiteServer extends WebSocketServer
       return;
     }
 
+    if ($parsedMsg["instruction"] == "SESS" && isset($parsedMsg["content"]["id"]) && isset($parsedMsg["content"]["token"])) {
+      $user->sessId = $parsedMsg["content"]["id"];
+      $user->sessToken = $parsedMsg["content"]["token"];
+    }
+
+    if (!isset($user->sessId) || !isset($user->sessToken)) {
+      $this->respond($user, word("invalid-request"));
+      return;
+    }
+
     $sql = "SELECT * FROM `profiles` WHERE `user_id`=?";
     $statement = $GLOBALS["connection"]->prepare($sql);
     $statement->bind_param("i", $user->sessId);
@@ -94,6 +104,55 @@ class SpiteServer extends WebSocketServer
 
     if ($timeBetween > TIME_HOUR * 8) {
       $this->respond($user, "SESS:EXP");
+      return;
+    }
+    
+    if ($parsedMsg["instruction"] == "SESS") {
+      $user->username = $row["username"];
+      $user->name = $row["name"];
+      $user->picture = $row["picture"];
+
+      // If there are no other clients already connected
+      if (!isset($this->userClients[$user->sessId])) {
+        // Will eventually need to define a friends system likely another relational table :)
+        // For now I will get the current chats and use that to determine the active friends
+
+        // When status is added as a table column "appear offline" would negate this entire logic
+        $sql = "
+          SELECT profiles.user_id
+          FROM `chats`
+          JOIN `profiles`
+          ON IF(chats.sender = {$user->sessId}, chats.receiver = profiles.user_id, chats.sender = profiles.user_id)
+          WHERE chats.sender = {$user->sessId} OR chats.receiver = {$user->sessId}
+          ORDER BY `modified` DESC;
+        ";
+        $result = $GLOBALS["connection"]->query($sql);
+        $this->updateMysqlLastUsed();
+
+        $row = $result->fetch_all(MYSQLI_ASSOC);
+
+        foreach ($row as $chat) {
+          if (isset($this->userClients[$chat["user_id"]])) {
+            foreach ($this->userClients[$chat["user_id"]] as $client) {
+              $this->send(
+                $client,
+                json_encode([
+                  "ok" => true,
+                  "username" => $user->username,
+                  "status" => "online", // This will eventually reflect an option within the profiles table for now "online" is fine
+                ])
+              );
+            }
+          }
+        }
+        $this->userClients[$user->sessId] = [];
+      }
+      $this->userClients[$user->sessId][$user->id] = $user;
+      
+      $this->stdout("\033[36m[i] \033[35m" . $user->id . "\033[39m " . word("validated-session"));
+      $this->respond($user, word("validated-session"), true, [
+        "sendId" => $parsedMsg["sendId"],
+      ]);
       return;
     }
 
@@ -360,123 +419,22 @@ class SpiteServer extends WebSocketServer
 
   protected function connecting($user)
   {
-    $this->stdout("\033[36m[i] \033[39m" . word("client-connecting"));
-  }
-
-  protected function doingHandShake($user, $headers, &$handshakeResponse)
-  {
-    // If there's already an issue there's no reason to check for another
-    if (!empty($handshakeResponse)) {
-      return;
-    }
-
-    if (
-      !isset($headers["get"]) ||
-      empty(trim($headers["get"])) ||
-      trim($headers["get"]) == "/"
-    ) {
-      $handshakeResponse = "HTTP/1.1 400 Bad Request";
-      return;
-    }
-
-    list($sessId, $token) = explode(".", substr($headers["get"], 1));
-
-    if (empty($sessId) || empty($token)) {
-      $handshakeResponse = "HTTP/1.1 400 Bad Request";
-      return;
-    }
-
-    $sql = "SELECT * FROM `profiles` WHERE `user_id`=?";
-    $statement = $GLOBALS["connection"]->prepare($sql);
-    $statement->bind_param("i", $sessId);
-    $this->updateMysqlLastUsed();
-
-    // Failed execute MySQL statement
-    if (!$statement->execute()) {
-      $handshakeResponse = "HTTP/1.1 400 Bad Request";
-      return;
-    }
-
-    $result = $statement->get_result();
-
-    // Failed to find the user
-    if ($result->num_rows == 0) {
-      $handshakeResponse = "HTTP/1.1 400 Bad Request";
-      return;
-    }
-
-    $row = $result->fetch_assoc();
-
-    // Failed to validate token
-    if ($row["token"] != $token) {
-      $handshakeResponse = "HTTP/1.1 400 Bad Request";
-      return;
-    }
-
-    $token_generated = strtotime($row["token_generated"]);
-    $timeBetween = time() - $token_generated;
-
-    // Token expired
-    if ($timeBetween > TIME_HOUR * 8) {
-      $handshakeResponse = "HTTP/1.1 400 Bad Request";
-      return;
-    }
-
-    $user->sessId = $row["user_id"];
-    $user->sessToken = $row["token"];
-
-    $user->username = $row["username"];
-    $user->name = $row["name"];
-    $user->picture = $row["picture"];
-
-    // Will eventually need to define a friends system likely another relational table :)
-    // For now I will get the current chats and use that to determine the active friends
-
-    // When status is added as a table column "appear offline" would negate this entire logic
-    $sql = "
-      SELECT profiles.user_id
-      FROM `chats`
-      JOIN `profiles`
-      ON IF(chats.sender = $sessId, chats.receiver = profiles.user_id, chats.sender = profiles.user_id)
-      WHERE chats.sender = $sessId OR chats.receiver = $sessId
-      ORDER BY `modified` DESC;
-    ";
-    $result = $GLOBALS["connection"]->query($sql);
-    $this->updateMysqlLastUsed();
-
-    $row = $result->fetch_all(MYSQLI_ASSOC);
-
-    foreach ($row as $chat) {
-      if (isset($this->userClients[$chat["user_id"]])) {
-        foreach ($this->userClients[$chat["user_id"]] as $client) {
-          $this->send(
-            $client,
-            json_encode([
-              "ok" => true,
-              "username" => $user->username,
-              "status" => "online", // This will eventually reflect an option within the profiles table for now "online" is fine
-            ])
-          );
-        }
-      }
-    }
+    $this->stdout("\033[36m[i] \033[35m" . $user->id . " \033[39m" . word("client-connecting"));
   }
 
   protected function connected($user)
   {
-    if (!isset($this->userClients[$user->sessId])) $this->userClients[$user->sessId] = [];
-    $this->userClients[$user->sessId][$user->id] = $user;
-    $this->stdout("\033[36m[i] \033[39m" . word("user-connected") . " - " . word("count") . ": " . count($this->users));
+    $this->stdout("\033[36m[i] \033[35m" . $user->id . " \033[39m" . word("client-connected") . " - " . word("count") . ": " . count($this->users));
   }
 
   protected function closed($user)
   {
-    unset($this->userClients[$user->sessId][$user->id]);
-    if (empty($this->userClients[$user->sessId])) unset($this->userClients[$user->sessId]);
-    $this->stdout("\033[36m[i] \033[39m" . word("user-disconnected") . " - " . word("count") . ": " . count($this->users));
-    if ($user->username == null) {
+    $this->stdout("\033[31m[!] \033[35m" . $user->id . " \033[39m" . word("client-disconnected") . " - " . word("count") . ": " . count($this->users));
+    if (!isset($user->username)) {
       return;
     }
+    if (isset($this->userClients[$user->sessId][$user->id])) unset($this->userClients[$user->sessId][$user->id]);
+    if (empty($this->userClients[$user->sessId])) unset($this->userClients[$user->sessId]);
     if (!empty($this->userClients[$user->sessId])) return;
     $sql = "
       SELECT profiles.user_id
@@ -521,6 +479,18 @@ class SpiteServer extends WebSocketServer
           "\033[31m[!] \033[39m" . word("mysql-false-ping") . " " .
             $GLOBALS["connection"]->ping()
         );
+      }
+    }
+    // Check for invalid and timed out clients
+    foreach ($this->users as $currentUser) {
+      if (!isset($currentUser->username)) {
+        if ((time() - $currentUser->created) > 15) {
+          $this->respond($currentUser, word("validation-timed-out"));
+          $this->stdout(
+            "\033[31m[!] \033[35m" . $currentUser->id . "\033[39m " . word("validation-timed-out")
+          );
+          $this->disconnect($currentUser->socket);
+        }
       }
     }
   }

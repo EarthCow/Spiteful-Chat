@@ -112,13 +112,13 @@ abstract class WebSocketServer
       if (empty($this->sockets)) {
         $this->sockets["m"] = $this->master;
       }
+      // Maintenance
+      $this->_tick();
+      $this->tick();
       // Get all of the sockets
       $read = $this->sockets;
       // Set null values
       $write = $except = null;
-      // Maintenance
-      $this->_tick();
-      $this->tick();
       // Load the sockets
       @socket_select($read, $write, $except, 1);
       foreach ($read as $socket) {
