@@ -233,16 +233,16 @@ $words = array(
     "de_DE" => "Client versucht eine Verbindung herzustellen...",
   ),
 
-  "client-connected" => array(
-    "en_US" => "Client connected",
-    "es_ES" => "Cliente conectada",
-    "de_DE" => "Client verbunden",
+  "user-connected" => array(
+    "en_US" => "User Connected",
+    "es_ES" => "Usuario Conectado",
+    "de_DE" => "Benutzer verbunden",
   ),
 
-  "client-disconnected" => array(
-    "en_US" => "Client disconnected",
-    "es_ES" => "Cliente desconectada",
-    "de_DE" => "Clientverbindung getrennt",
+  "user-disconnected" => array(
+    "en_US" => "User Disconnected",
+    "es_ES" => "Usuario Desconectado",
+    "de_DE" => "Benutzer getrennt",
   ),
 
   "count" => array(
@@ -566,18 +566,6 @@ $words = array(
     "de_DE" => "Datensätze erfolgreich aktualisiert",
   ),
 
-  "validated-session" => array(
-    "en_US" => "Validated session",
-    "es_ES" => "Sesión validada",
-    "de_DE" => "Validierte Sitzung",
-  ),
-
-  "validation-timed-out" => array(
-    "en_US" => "Validation timed out",
-    "es_ES" => "Se agotó el tiempo de validación",
-    "de_DE" => "Zeitüberschreitung bei der Validierung",
-  ),
-
 );
 
 $publicWords = [
@@ -624,7 +612,6 @@ $publicWords = [
   "sending",
   "settings",
   "enable-notifications",
-  "validated-session",
 ];
 
 if (!isset($language)) {
