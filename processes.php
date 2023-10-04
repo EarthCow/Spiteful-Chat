@@ -1,7 +1,7 @@
 <?php
 
-require_once "./assets/configuration.php";
-require_once "./assets/languages.php";
+require_once "./configuration.php";
+require_once "./languages.php";
 
 // Verify required information is present
 if (!isset($_POST["process"]) || !isset($_POST["data"])) {
@@ -10,44 +10,12 @@ if (!isset($_POST["process"]) || !isset($_POST["data"])) {
 }
 
 // Check if user is logged in
-if (!isset($_SESSION["id"]) || !isset($_SESSION["token"])) {
+$row = verifySession(true);
+if (!$row) {
+  logout(false);
   die("SESS");
 }
-
-require_once "$privateFolder/database.php";
-$connection = $GLOBALS["connection"];
-
-$userId = $_SESSION["id"];
-$token = $_SESSION["token"];
-
-$sql = "SELECT * FROM `profiles` WHERE `user_id`=?";
-$statement = $connection->prepare($sql);
-$statement->bind_param("i", $userId);
-$statement->execute() or die(word("error-occurred") . " CSDB10"); // Code select database 10 double digits for distinction
-$result = $statement->get_result();
-
-// User exists?
-if ($result->num_rows == 0) {
-  session_destroy();
-  die("CNE1"); // Code no entry 1
-}
-
-$row = $result->fetch_assoc();
-
-// Invalid token
-if ($row["token"] != $token) {
-  session_destroy();
-  die("CIT1"); // Code invalid token 1
-}
-
-$token_generated = strtotime($row["token_generated"]);
-$timeBetween = time() - $token_generated;
-
-// Expired token
-if ($timeBetween > (TIME_HOUR * 8)) {
-  session_destroy();
-  die("SESS");
-}
+$userId = $row["user_id"];
 
 $process = $_POST["process"];
 $data = $_POST["data"];
@@ -487,16 +455,6 @@ switch ($process) {
     }
 
     break;
-
-  case "getLogin":
-    // Get user login info
-
-    $response = [
-      "ok" => true,
-      "id" => $row["user_id"],
-      "token" => $row["token"],
-    ];
-    die(json_encode($response));
 
   default:
     $response["statusText"] = word("invalid-request");

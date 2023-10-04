@@ -2,7 +2,7 @@
 
 // Fetch translations
 var translations;
-$.getJSON("./assets/languages.php", (data) => {
+$.getJSON("./languages.php", (data) => {
   translations = data;
 })
   .done(() => {
@@ -1161,8 +1161,7 @@ function receiveMessage(msg) {
 }
 
 class MyWebSocket {
-  constructor(credentials) {
-    this.credentials = credentials;
+  constructor() {
     this.connectionAttempts = 0;
     this.sendId = 0;
     this.waitingActions = {};
@@ -1174,11 +1173,16 @@ class MyWebSocket {
   }
 
   init() {
-    const host =
-      "wss://" + window.location.hostname + "/_ws_/" + this.credentials;
+    const host = "wss://" + window.location.hostname + "/_ws_/";
     try {
       this.socket = new WebSocket(host);
       this.socket.onopen = () => {
+        if (this.connectionAttempts > 1) {
+          Toast.fire({
+            icon: "success",
+            title: word("reconnect-success"),
+          });
+        }
         this.connectionAttempts = 0;
         my.getChats();
         if (
@@ -1223,12 +1227,25 @@ class MyWebSocket {
   reconnect() {
     if (this.socket.readyState != this.socket.CLOSED) return;
     if (document.visibilityState !== "visible") return;
-    if (this.connectionAttempts++ > 1) {
-      Toast.fire({
-        icon: "info",
-        title: word("disconnected-reconnect"),
-        didOpen: () => Swal.showLoading(),
-      });
+    if (++this.connectionAttempts > 1) {
+      console.log(this.connectionAttempts);
+      if (this.connectionAttempts == 2) {
+        Toast.fire({
+          icon: "error",
+          title: word("disconnected-reconnect"),
+          didOpen: () => Swal.showLoading(),
+          timer: null,
+        });
+        // The only point of this request is to check that the session is valid
+        // If it isn't then the client will be refreshed
+        // If it is then the WebSocket server must be down
+        $.post("processes", {
+          process: "getChats",
+          data: 896,
+        }).then((result) => {
+          verifyResultJSON(result);
+        });
+      }
       setTimeout(() => {
         console.log(word("disconnected-reconnect"));
         this.init();
@@ -1338,18 +1355,8 @@ $(function () {
     }
   });
 
-  $.post(
-    "processes",
-    {
-      process: "getLogin",
-      data: 869,
-    },
-    function (result) {
-      const parsed = verifyResultJSON(result);
-      my.socket = new MyWebSocket(`${parsed.id}.${parsed.token}`);
-      my.socket.init();
-    },
-  );
+  my.socket = new MyWebSocket();
+  my.socket.init();
   // Message container scroll
   $(".messagesContainer").scroll(function () {
     if (my.openChat.hasAllMessages) return;

@@ -1,8 +1,7 @@
 <?php
 
-$noSession = true;
-require_once "./assets/configuration.php";
-require_once "./assets/languages.php";
+require_once "./configuration.php";
+require_once "./languages.php";
 
 // Continue with Google
 
@@ -19,8 +18,6 @@ require_once "$composerFolder/autoload.php";
 // Get $id_token via HTTPS POST.
 
 $id_token = $_POST["credential"];
-
-require_once "$privateFolder/google-variables.php";
 
 $client = new Google_Client(["client_id" => $googleClientId]);  // Specify the CLIENT_ID of the app that accesses the backend
 $payload = $client->verifyIdToken($id_token);
@@ -41,7 +38,7 @@ $google_id = $payload["sub"];
 $sql = "SELECT * FROM `profiles` WHERE `google_id`='$google_id'";
 $result = $connection->query($sql) or die(word("error-occurred") . " CSDB1"); // Code select database 1
 
-$token = base64_encode(openssl_random_pseudo_bytes(128));
+$token = bin2hex(random_bytes(32));
 if ($result->num_rows == 0) {
   // if there is no entry in the database with the google id then create one
   $name = $payload["name"];
@@ -66,7 +63,6 @@ if ($result->num_rows == 0) {
 
 $row = $result->fetch_assoc();
 
-startSession();
-$_SESSION["id"] = $row["user_id"];
-$_SESSION["token"] = $token;
+createSession($row["user_id"], $token);
+
 header("Location: ./dashboard");

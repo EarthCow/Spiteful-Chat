@@ -9,15 +9,14 @@ function spiteErrorHandler($errno, $errstr, $errfile, $errline)
 
 set_error_handler("spiteErrorHandler");
 
-require_once "./assets/configuration.php";
+require_once "./configuration.php";
 require_once "$composerFolder/autoload.php";
 
 use Minishlink\WebPush\WebPush;
 use Minishlink\WebPush\Subscription;
 
-require_once "./assets/languages.php";
+require_once "./languages.php";
 require_once "./websocket/websockets.php";
-require_once "$privateFolder/vapid-keys.php";
 require_once "$privateFolder/database.php";
 
 restore_error_handler();
@@ -219,7 +218,7 @@ class SpiteServer extends WebSocketServer
             );
           }
         }
-        
+
         // If the receiver is subscribed send them a push notification
         $sql = "SELECT `notify_sub` FROM `profiles` WHERE `username` = ?";
         $statement = $GLOBALS["connection"]->prepare($sql);
@@ -236,14 +235,14 @@ class SpiteServer extends WebSocketServer
               "publicKey" => $vapidPublic,
               "privateKey" => $vapidPrivate
             ]]);
-            
+
             $result = $push->sendOneNotification($sub, json_encode([
-                "title" => $user->name,
-                "body" => $message["content"] ?? $message["original"],
-                "icon" => $user->picture,
-                // "image" => $user->picture
+              "title" => $user->name,
+              "body" => $message["content"] ?? $message["original"],
+              "icon" => $user->picture,
+              // "image" => $user->picture
             ]));
-            
+
             if (!$result->isSuccess()) {
               $this->stdout(word("service-worker-failed-expired") . $result->isSubscriptionExpired());
               if ($result->isSubscriptionExpired()) {
@@ -308,9 +307,9 @@ class SpiteServer extends WebSocketServer
         $statement->bind_param("s", $parsedMsg["content"]);
         $statement->execute();
         $result = $statement->get_result();
-        
+
         $this->updateMysqlLastUsed();
-        
+
         if ($result->num_rows == 0) {
           $this->respond($user, word("invalid-operation"));
           return;
@@ -360,7 +359,7 @@ class SpiteServer extends WebSocketServer
 
   protected function connecting($user)
   {
-    $this->stdout("\033[36m[i] \033[39m" . word("client-connecting"));
+    $this->stdout("\033[36m[i] \033[35m" . $user->id . " \033[39m" . word("client-connecting"));
   }
 
   protected function doingHandShake($user, $headers, &$handshakeResponse)
@@ -370,59 +369,27 @@ class SpiteServer extends WebSocketServer
       return;
     }
 
-    if (
-      !isset($headers["get"]) ||
-      empty(trim($headers["get"])) ||
-      trim($headers["get"]) == "/"
-    ) {
+    if (!isset($headers["cookie"]) || !str_contains($headers["cookie"], "SPITESESS")) {
       $handshakeResponse = "HTTP/1.1 400 Bad Request";
       return;
     }
 
-    list($sessId, $token) = explode(".", substr($headers["get"], 1));
+    $cookies = explode(";", $headers["cookie"]);
+    $parsedCookies = array();
+    foreach ($cookies as $cookie) {
+      list($key, $value) = explode("=", trim($cookie));
+      $parsedCookies[$key] = $value;
+    }
 
-    if (empty($sessId) || empty($token)) {
+    $row = verifySession(true, $parsedCookies["SPITESESS"]);
+    if (!$row) {
       $handshakeResponse = "HTTP/1.1 400 Bad Request";
       return;
     }
-
-    $sql = "SELECT * FROM `profiles` WHERE `user_id`=?";
-    $statement = $GLOBALS["connection"]->prepare($sql);
-    $statement->bind_param("i", $sessId);
     $this->updateMysqlLastUsed();
 
-    // Failed execute MySQL statement
-    if (!$statement->execute()) {
-      $handshakeResponse = "HTTP/1.1 400 Bad Request";
-      return;
-    }
-
-    $result = $statement->get_result();
-
-    // Failed to find the user
-    if ($result->num_rows == 0) {
-      $handshakeResponse = "HTTP/1.1 400 Bad Request";
-      return;
-    }
-
-    $row = $result->fetch_assoc();
-
-    // Failed to validate token
-    if ($row["token"] != $token) {
-      $handshakeResponse = "HTTP/1.1 400 Bad Request";
-      return;
-    }
-
-    $token_generated = strtotime($row["token_generated"]);
-    $timeBetween = time() - $token_generated;
-
-    // Token expired
-    if ($timeBetween > TIME_HOUR * 8) {
-      $handshakeResponse = "HTTP/1.1 400 Bad Request";
-      return;
-    }
-
-    $user->sessId = $row["user_id"];
+    $sessId = $row["user_id"];
+    $user->sessId = $sessId;
     $user->sessToken = $row["token"];
 
     $user->username = $row["username"];
@@ -466,14 +433,14 @@ class SpiteServer extends WebSocketServer
   {
     if (!isset($this->userClients[$user->sessId])) $this->userClients[$user->sessId] = [];
     $this->userClients[$user->sessId][$user->id] = $user;
-    $this->stdout("\033[36m[i] \033[39m" . word("user-connected") . " - " . word("count") . ": " . count($this->users));
+    $this->stdout("\033[36m[i] \033[35m" . $user->id . " \033[39m" . word("client-connected") . " - " . word("count") . ": " . count($this->users));
   }
 
   protected function closed($user)
   {
     unset($this->userClients[$user->sessId][$user->id]);
     if (empty($this->userClients[$user->sessId])) unset($this->userClients[$user->sessId]);
-    $this->stdout("\033[36m[i] \033[39m" . word("user-disconnected") . " - " . word("count") . ": " . count($this->users));
+    $this->stdout("\033[31m[!] \033[35m" . $user->id . " \033[39m" . word("client-disconnected") . " - " . word("count") . ": " . count($this->users));
     if ($user->username == null) {
       return;
     }

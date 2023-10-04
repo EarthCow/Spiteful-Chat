@@ -1,7 +1,7 @@
 <?php
 
-require "./assets/configuration.php";
-require "./assets/language.php";
+require "./configuration.php";
+require "./language.php";
 
 ?>
 <!DOCTYPE html>

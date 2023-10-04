@@ -1,6 +1,6 @@
 <?php
 
-require_once "./assets/configuration.php";
+require_once "./configuration.php";
 
 // Verification
 
@@ -11,48 +11,15 @@ if (!isset($_GET["id"])) {
 }
 
 // Check if user is logged in
-if (!isset($_SESSION["id"]) || !isset($_SESSION["token"])) {
+
+$payload = verifySession(true);
+if (!$payload) {
+  logout(false);
   http_response_code(404);
   // Include 404 error document here
   die();
 }
-
-require_once "$privateFolder/database.php";
-
-$userId = $_SESSION["id"];
-$token = $_SESSION["token"];
-
-$sql = "SELECT * FROM `profiles` WHERE `user_id`=?";
-$statement = $connection->prepare($sql);
-$statement->bind_param("i", $userId);
-$statement->execute() or die(); // Code select database 10 double digits for distinction
-$result = $statement->get_result();
-
-if ($result->num_rows == 0) {
-  session_destroy();
-  http_response_code(404);
-  // Include 404 error document here
-  die(); // Code no entry 1
-}
-
-$row = $result->fetch_assoc();
-
-if ($row["token"] != $token) {
-  session_destroy();
-  http_response_code(404);
-  // Include 404 error document here
-  die(); // Code invalid token 1
-}
-
-$token_generated = strtotime($row["token_generated"]);
-$timeBetween = time() - $token_generated;
-if ($timeBetween > 28800) {
-  // 28800 is 8 hours
-  session_destroy();
-  http_response_code(404);
-  // Include 404 error document here
-  die();
-}
+$userId = $payload["sub"];
 
 // User and token are verified
 

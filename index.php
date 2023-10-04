@@ -1,10 +1,9 @@
 <?php
 
-require_once "./assets/configuration.php";
-require_once "./assets/languages.php";
-require_once "$privateFolder/google-variables.php";
+require_once "./configuration.php";
+require_once "./languages.php";
 
-if (isset($_SESSION["id"])) {
+if (isset($_COOKIE["SPITESESS"])) {
   header("Location: ./dashboard");
   die();
 }
