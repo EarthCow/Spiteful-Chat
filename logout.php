@@ -1,4 +1,4 @@
 <?php
 
-require_once "./assets/configuration.php";
+require_once "./configuration.php";
 logout();

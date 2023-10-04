@@ -233,16 +233,16 @@ $words = array(
     "de_DE" => "Client versucht eine Verbindung herzustellen...",
   ),
 
-  "user-connected" => array(
-    "en_US" => "User Connected",
-    "es_ES" => "Usuario Conectado",
-    "de_DE" => "Benutzer verbunden",
+  "client-connected" => array(
+    "en_US" => "Client connected",
+    "es_ES" => "Cliente conectada",
+    "de_DE" => "Client verbunden",
   ),
 
-  "user-disconnected" => array(
-    "en_US" => "User Disconnected",
-    "es_ES" => "Usuario Desconectado",
-    "de_DE" => "Benutzer getrennt",
+  "client-disconnected" => array(
+    "en_US" => "Client disconnected",
+    "es_ES" => "Cliente desconectada",
+    "de_DE" => "Clientverbindung getrennt",
   ),
 
   "count" => array(
@@ -500,6 +500,12 @@ $words = array(
     "de_DE" => "Getrennt! Wiederherstellungsversuch...",
   ),
 
+  "reconnect-success" => array(
+    "en_US" => "Successfully reconnected!",
+    "es_ES" => "¡Reconectado exitosamente!",
+    "de_DE" => "Erfolgreich wiederhergestellt!",
+  ),
+
   "message" => array(
     "en_US" => "Message",
     "es_ES" => "Mensaje",
@@ -607,6 +613,7 @@ $publicWords = [
   "websocket-disconnected",
   "ping",
   "disconnected-reconnect",
+  "reconnect-success",
   "already-exists",
   "message",
   "sending",
@@ -640,7 +647,7 @@ if (basename(__FILE__) != basename($_SERVER["SCRIPT_FILENAME"])) {
   $htmlLang = explode("_", $language);
   $htmlLang = $htmlLang[0];
 } else {
-  require("../assets/configuration.php");
+  require("./configuration.php");
   if (!in_array($language, $words["supported-languages-list"])) {
     $language = "en_US";
   }

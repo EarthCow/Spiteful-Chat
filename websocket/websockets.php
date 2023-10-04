@@ -2,10 +2,7 @@
 
 set_error_handler("spiteErrorHandler");
 
-$noSession = true;
 require_once "./websocket/users.php";
-require_once "./assets/configuration.php";
-require_once "./assets/languages.php";
 
 restore_error_handler();
 

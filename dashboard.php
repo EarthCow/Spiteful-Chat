@@ -3,60 +3,25 @@
 // Restrict access only to administrators
 $administrators = [1];
 
-$noSession = false;
-require_once "./assets/configuration.php";
-require_once "./assets/languages.php";
+require_once "./configuration.php";
+require_once "./languages.php";
 
 // Check if user is logged in
-if (!isset($_SESSION["id"]) || !isset($_SESSION["token"])) {
-  header("Location: ./"); // Redirects to /spiteful-chat/
+$row = verifySession(true);
+
+if (!$row) {
+  logout();
   die();
 }
 
-$userId = $_SESSION["id"];
+$userId = $row["user_id"];
 if ($maintenance && !in_array($userId, $administrators)) {
   header("Location: ./maintenance");
   die();
 }
 
-$token = $_SESSION["token"];
-
-require_once("$privateFolder/database.php");
-$connection = $GLOBALS["connection"];
-
-$sql = "SELECT * FROM `profiles` WHERE `user_id`=?";
-$statement = $connection->prepare($sql);
-$statement->bind_param("i", $userId);
-$statement->execute() or die(word("error-occurred") . " CSDB10"); // Code select database 10 double digits for distinction
-$result = $statement->get_result();
-
-if ($result->num_rows == 0) {
-  logout();
-  header("Location: ./"); // Redirects to /spiteful-chat/
-  die();
-}
-
-$row = $result->fetch_assoc();
-
-if ($row["token"] != $token) {
-  logout();
-  header("Location: ./"); // Redirects to /spiteful-chat/
-  die();
-}
-
-$token_generated = strtotime($row["token_generated"]);
-$timeBetween = time() - $token_generated;
-
-if ($timeBetween > (TIME_HOUR * 8)) {
-  logout();
-  header("Location: ./"); // Redirects to /spiteful-chat/
-  die();
-}
-
 $sql = "UPDATE `profiles` SET `last_active`=CURRENT_TIMESTAMP WHERE `user_id`=$userId";
 $connection->query($sql) or die(word("error-occurred") . " CULA1"); // Code update last active 1
-
-require_once "$privateFolder/vapid-keys.php";
 
 ?>
 <!DOCTYPE html>
