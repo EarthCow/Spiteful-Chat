@@ -39,18 +39,20 @@ $sql = "SELECT * FROM `profiles` WHERE `google_id`='$google_id'";
 $result = $connection->query($sql) or die(word("error-occurred") . " CSDB1"); // Code select database 1
 
 $token = bin2hex(random_bytes(32));
-if ($result->num_rows == 0) {
-  // if there is no entry in the database with the google id then create one
-  $name = $payload["name"];
-  $email = $payload["email"];
-  $email_verified = $payload["email_verified"];
-  $picture = $payload["picture"];
 
+$name = $payload["name"];
+$email = $payload["email"];
+$email_verified = $payload["email_verified"];
+$picture = empty($payload["picture"]) ?  "assets/images/user-default.svg" : $payload["picture"];
+
+if ($result->num_rows == 0) {
+  // If there is no entry in the database with the google id then create one
   $sql = "INSERT INTO `profiles` (`google_id`, `name`, `email`, `email_verified`, `picture`, `token`) VALUES ('$google_id', '$name', '$email', $email_verified, '$picture', '$token')";
   $connection->query($sql) or die(word("error-occurred") . " CIDB1"); // Code insert database 1
 } else {
-  // if there is an entry then log the user in
-  $sql = "UPDATE `profiles` SET `token`='$token', `token_generated`=CURRENT_TIMESTAMP WHERE `google_id`='$google_id'";
+  // If there is an entry then log the user in
+  // Update any changes there might've been to the user's account information
+  $sql = "UPDATE `profiles` SET `name`='$name', `email`='$email', `email_verified`=$email_verified, `picture`='$picture', `token`='$token', `token_generated`=CURRENT_TIMESTAMP WHERE `google_id`='$google_id'";
   $connection->query($sql) or die(word("error-occurred") . " CUDB1"); // Code update database 1
 }
 
