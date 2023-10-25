@@ -4,16 +4,13 @@
 var translations;
 $.getJSON("./languages.php", (data) => {
   translations = data;
-})
-  .done(() => {
-    document.onmousemove = function () {
-      // Revert to default title
-      document.title = word("dashboard");
-    };
-  })
-  .fail(() => {
-    console.error("Translations failed to load");
-  });
+  document.onmousemove = function () {
+    // Revert to default title
+    document.title = word("dashboard");
+  };
+}).fail(() => {
+  console.error("Translations failed to load");
+});
 
 function word(word) {
   return translations[word];
@@ -1499,12 +1496,12 @@ function convertUri(text) {
   // Regex may be changed to do maybe www.google.com and not just https://www.google.com or https://google.com
   // exp2 may be trying to do that but it just doesn't
   var exp =
-    /(?<!")(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])(?!")/gi;
+    /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/gi;
   var ctext = text.replaceAll(
     exp,
     '<a target="_blank" style="text-decoration:none;font-weight:bold" href="$1">$1</a>',
   );
-  var exp2 = /(?<!")(^|[^\/])(www\.[\S]+(\b|$))(?!")/gim;
+  var exp2 = /(^|[^\/])(www\.[\S]+(\b|$))/gim;
   return ctext.replaceAll(
     exp2,
     '$1<a target="_blank" style="text-decoration:none;font-weight:bold" href="https://$2">$2</a>',
