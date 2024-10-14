@@ -195,6 +195,15 @@ a {
   background-color: #1a7dcd;
 }
 
+.availableUsersBoxItem {
+  transition: background-color 0.25s;
+}
+
+.availableUsersBoxItem:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+  cursor: default;
+}
+
 .profiles-block ul {
   list-style-type: none;
   padding: 0;

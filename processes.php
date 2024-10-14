@@ -25,6 +25,25 @@ $response = [
   "statusText" => word("invalid-username"),
 ];
 switch ($process) {
+  case "getUsers":
+    $sql = "
+      SELECT `username`, `name`, `picture`
+      FROM `profiles`
+      WHERE profiles.user_id <> $userId
+      ORDER BY `last_active` DESC
+      LIMIT 25;
+    ";
+    ($result = $connection->query($sql)) or
+      die(word("error-occurred") . " GU1"); // Code get users 1
+
+    $row = $result->fetch_all(MYSQLI_ASSOC);
+
+    // If there are no rows (users) then send an empty array
+    $response = ["ok" => true, "users" => $row ?? []];
+    die(json_encode($response));
+
+    break;
+
   case "getChats":
     $sql = "
       SELECT chats.chat_id, chats.last_message, chats.modified, profiles.username, profiles.name, profiles.picture

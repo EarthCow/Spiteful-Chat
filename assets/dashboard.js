@@ -219,8 +219,10 @@ let my = {
   newChat() {
     Swal.fire({
       title: word("who-recipient"),
+      html: "<div id='availableUsersLoader' class='loader'></div>",
       input: "text",
       inputAttributes: {
+        id: "newChatUsernameInput",
         autocapitalize: "off",
         spellcheck: "false",
         placeholder: word("username"),
@@ -232,6 +234,32 @@ let my = {
       showLoaderOnConfirm: true,
       // Do not want to return focus to the new message button
       returnFocus: false,
+      didOpen: () => {
+        $.post("processes", {
+          process: "getUsers",
+          data: 896,
+        })
+          .then((response) => {
+            if ((response = verifyResultJSON(response))) {
+              console.log(response)
+              if (!response.ok) {
+                throw new Error(response.statusText);
+              }
+              const $availableUsersBox = $("<div class='availableUsersBox' style='max-height:20vh;'>");
+              response.users.forEach((user) => {
+                $availableUsersBox.append(
+                  `<div class="availableUsersBoxItem" onclick="$('#newChatUsernameInput').val('${user.username}');Swal.getConfirmButton().click();">${user.name} (<i>${user.username ?? "none"}</i>)</div>`,
+                );
+              })
+              $("#availableUsersLoader").before($availableUsersBox);
+              $("#availableUsersLoader").remove();
+              return response;
+            }
+          })
+          .catch((error) => {
+            Swal.showValidationMessage(error);
+          });
+      },
       preConfirm: (username) => {
         // Check if the field is empty
         if (username === "") {
