@@ -264,6 +264,7 @@ button:hover,
 
 .profiles-list-wrapper {
   flex-grow: 2;
+  overflow-y: auto;
 }
 
 .my-profile-section {
